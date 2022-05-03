@@ -116,14 +116,39 @@ class InputHandler {
         }
     }
 }
+class AnimationEventHandler {
+    constructor() {
+        this.animationEventHandlers = [];
+    }
+
+    AddAnimationEventHandler(element, animationName, eventType, callBack) {
+        this.animationEventHandlers.push({ element, animationName, eventType, callBack });
+    }
+
+    HandleAnimationEvents() {
+        for (let i = 0; i < this.animationEventHandlers.length; i++) {
+            let evHandler = this.animationEventHandlers[i];
+            document.addEventListener(evHandler.eventType, () => evHandler.callBack());
+        }
+    }
+}
 
 window.onload = () => {
-    let mainCollisionSystem = new CollisionSystem();
+    const mainCollisionSystem = new CollisionSystem();
+    const mainAnimEvHandler = new AnimationEventHandler();
     const inputHandler = new InputHandler();
 
     mainCollisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
+    mainAnimEvHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
+        console.log(`${player.classList[0]} has Jumped!`);
+        player.classList.remove('player-jump-animation');
+    });
+    mainAnimEvHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationstart', () => {
+        console.log(`${player.classList[0]} is Jumping!`);
+    });
+    mainAnimEvHandler.HandleAnimationEvents();
 
-    inputHandler.AddKeyHandler('w', () => console.log("'w' was pressed!"));
+    inputHandler.AddKeyHandler('ArrowUp', () => console.log("Spacebar was pressed!"));
     inputHandler.HandleKeys();
 
     generateLoopCallback(() => {

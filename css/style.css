@@ -70,3 +70,22 @@ body {
     width: 32px;
     height: 32px;
 }
+
+.player-jump-animation {
+    animation: player-jump 500ms forwards;
+}
+
+@keyframes player-jump {
+    0% {
+        top: 45vh;
+    }
+    49% {
+        top: 35vh;
+    }
+    50% {
+        top: 35vh;
+    }
+    100% {
+        top: 45vh;
+    }
+}
