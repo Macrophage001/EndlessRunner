@@ -31,10 +31,28 @@ const generateCollisionHandler = (callback) => {
     return (col1, col2) => callback(col1, col2);
 }
 
+class CollisionHandler {
+    constructor(element) {
+        this.element = element;
+    }
+}
+class PlayerCollisionHandler extends CollisionHandler {
+    Handle(colA, colB) {
+        let collidedWith;
+        if (colA === this.element) {
+            collidedWith = colB;
+        } else {
+            collidedWith = colA;
+        }
+
+        console.log(`${this.element.className} hit ${collidedWith.className}`);
+    }
+}
+
 class CollisionSystem {
-    constructor(collisionHandlers) {
+    constructor() {
+        this.collisionHandlers = [];
         this.colliders = document.getElementsByClassName('collider');
-        this.collisionHandlers = collisionHandlers;
     }
 
     AddCollisionHandler(collisionHandler) {
@@ -67,14 +85,49 @@ class CollisionSystem {
         }
     }
 }
+class InputHandler {
+    constructor() {
+        this.keyHandlers = [];
+    }
+
+    AddKeyHandler(key, callBack) {
+        if (this.keyHandlers.length > 0) {
+            for (let i = 0; i < this.keyHandlers.length; i++) {
+                if (this.keyHandlers[i].key.toLowerCase() === key.toLowerCase()) {
+                    this.keyHandlers[i].callBacks.push(callBack);
+                    break;
+                }
+            }
+        }
+        else {
+            this.keyHandlers.push({ key, callBacks: [callBack]});
+        }
+    }
+
+    HandleKeys() {
+        console.log(this.keyHandlers);
+        for (let i = 0; i < this.keyHandlers.length; i++) {
+            let keyHandler = this.keyHandlers[i];
+            document.onkeydown = (e) => {
+                if (e.key === keyHandler.key) {
+                    keyHandler.callBacks.forEach(cb => cb());
+                }
+            }
+        }
+    }
+}
 
 window.onload = () => {
     let mainCollisionSystem = new CollisionSystem();
+    const inputHandler = new InputHandler();
+
+    mainCollisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
+
+    inputHandler.AddKeyHandler('w', () => console.log("'w' was pressed!"));
+    inputHandler.HandleKeys();
 
     generateLoopCallback(() => {
-        mainCollisionSystem.HandleCollision((col1, col2) => {
-            // console.log(`${col1.classList[0]} has collided with ${col2.classList[0]}`);
-        });
+        mainCollisionSystem.HandleCollision((col1, col2) => {});
     }, 10);
 }
 
