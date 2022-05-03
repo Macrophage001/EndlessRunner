@@ -45,7 +45,7 @@ class PlayerCollisionHandler extends CollisionHandler {
             collidedWith = colA;
         }
 
-        console.log(`${this.element.className} hit ${collidedWith.className}`);
+        // console.log(`${this.element.className} hit ${collidedWith.className}`);
     }
 }
 
@@ -133,6 +133,8 @@ class AnimationEventHandler {
     }
 }
 
+const FPS = 60;
+
 window.onload = () => {
     const mainCollisionSystem = new CollisionSystem();
     const mainAnimEvHandler = new AnimationEventHandler();
@@ -153,6 +155,6 @@ window.onload = () => {
 
     generateLoopCallback(() => {
         mainCollisionSystem.HandleCollision((col1, col2) => {});
-    }, 10);
+    }, FPS / 1000);
 }
 
