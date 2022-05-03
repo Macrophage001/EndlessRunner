@@ -1,6 +1,5 @@
 const game = document.querySelector('.game');
 const player = document.querySelector('.player');
-
 const colliders = document.getElementsByClassName('collider');
 
 // I only need the element's x, y, width, and height for my purposes.
@@ -26,7 +25,6 @@ const generateLoopCallback = (callback, interval) => {
     }
     repeat();
 }
-
 const generateCollisionHandler = (callback) => {
     return (col1, col2) => callback(col1, col2);
 }
@@ -88,31 +86,33 @@ class CollisionSystem {
 class InputHandler {
     constructor() {
         this.keyHandlers = [];
+        this.keyMap = {};
     }
 
     AddKeyHandler(key, callBack) {
+        let hasKey = false;
         if (this.keyHandlers.length > 0) {
             for (let i = 0; i < this.keyHandlers.length; i++) {
                 if (this.keyHandlers[i].key.toLowerCase() === key.toLowerCase()) {
                     this.keyHandlers[i].callBacks.push(callBack);
+                    hasKey = true;
                     break;
                 }
             }
         }
-        else {
+        if (!hasKey) {
             this.keyHandlers.push({ key, callBacks: [callBack]});
         }
     }
 
     HandleKeys() {
-        console.log(this.keyHandlers);
-        for (let i = 0; i < this.keyHandlers.length; i++) {
-            let keyHandler = this.keyHandlers[i];
-            document.onkeydown = (e) => {
-                if (e.key === keyHandler.key) {
+        document.onkeydown = document.onkeyup = (e) => {
+            this.keyMap[e.key] = e.type === 'keydown';
+            this.keyHandlers.forEach(keyHandler => {
+                if (this.keyMap[keyHandler.key]) {
                     keyHandler.callBacks.forEach(cb => cb());
                 }
-            }
+            });
         }
     }
 }
@@ -135,26 +135,46 @@ class AnimationEventHandler {
 
 const FPS = 60;
 
-window.onload = () => {
-    const mainCollisionSystem = new CollisionSystem();
-    const mainAnimEvHandler = new AnimationEventHandler();
-    const inputHandler = new InputHandler();
+const mainCollisionSystem = new CollisionSystem();
+const mainAnimEvHandler = new AnimationEventHandler();
+const inputHandler = new InputHandler();
 
+const velocityX = 4;
+
+const initAnimEventHandler = () => {
+}
+const initInputs = () => {
+    inputHandler.AddKeyHandler(' ', () => {
+        if (!player.classList.contains('player-jump-animation')) {
+            player.classList.add('player-jump-animation');
+            player.classList.toggle('player-running');
+            player.classList.toggle('player-jumping');
+        }
+    });
+    inputHandler.AddKeyHandler('ArrowRight', () => {
+        let left = player.getBoundingClientRect().left;
+        player.style.left = `${left + velocityX}px`;
+    });
+    inputHandler.AddKeyHandler('ArrowLeft', () => {
+        let left = player.getBoundingClientRect().left;
+        player.style.left = `${left - velocityX}px`;
+    });
+    inputHandler.HandleKeys();
+}
+
+window.onload = () => {
     mainCollisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
     mainAnimEvHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
-        console.log(`${player.classList[0]} has Jumped!`);
         player.classList.remove('player-jump-animation');
-    });
-    mainAnimEvHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationstart', () => {
-        console.log(`${player.classList[0]} is Jumping!`);
+        player.classList.toggle('player-jumping');
+        player.classList.toggle('player-running');
     });
     mainAnimEvHandler.HandleAnimationEvents();
 
-    inputHandler.AddKeyHandler('ArrowUp', () => console.log("Spacebar was pressed!"));
-    inputHandler.HandleKeys();
+    initInputs();
 
     generateLoopCallback(() => {
-        mainCollisionSystem.HandleCollision((col1, col2) => {});
+        mainCollisionSystem.HandleCollision((col1, col2) => { });
     }, FPS / 1000);
 }
 

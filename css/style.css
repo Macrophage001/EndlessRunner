@@ -63,12 +63,17 @@ body {
     top: 45vh;
     left: 13vw;
 
-    background-image: url(../images/sonicRunning.webp);
     background-position: center;
     background-size: cover;
 
     width: 32px;
     height: 32px;
+}
+.player-running {
+    background-image: url(../images/sonicRunning.webp);
+}
+.player-jumping {
+    background-image: url(../images/sonicJump.webp);
 }
 
 .player-jump-animation {
