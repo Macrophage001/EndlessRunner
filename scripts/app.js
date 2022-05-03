@@ -28,9 +28,6 @@ const generateLoopCallback = (callback, interval) => {
     }
     repeat();
 }
-const generateCollisionHandler = (callback) => {
-    return (col1, col2) => callback(col1, col2);
-}
 
 class CollisionHandler {
     constructor(element) {
@@ -48,7 +45,6 @@ class PlayerCollisionHandler extends CollisionHandler {
         }
     }
 }
-
 class CollectibleSystem {
     constructor() {
         this.collectibles = {};
@@ -92,7 +88,7 @@ class CollisionSystem {
         });
     }
 }
-class InputHandler {
+class InputSystem {
     constructor() {
         this.keyHandlers = [];
         this.keyMap = {};
@@ -127,7 +123,7 @@ class InputHandler {
         }
     }
 }
-class AnimationEventHandler {
+class AnimationEventSystem {
     constructor() {
         this.animationEventHandlers = [];
     }
@@ -151,9 +147,9 @@ class AnimationEventHandler {
 const FPS = 60;
 
 const collisionSystem   = new CollisionSystem();
-const animEventHandler  = new AnimationEventHandler();
+const animEventHandler  = new AnimationEventSystem();
 const collectibleSystem = new CollectibleSystem();
-const inputHandler      = new InputHandler();
+const inputHandler      = new InputSystem();
 
 const velocityX = 4;
 
@@ -177,12 +173,19 @@ const initInputs = () => {
         }
     });
     inputHandler.AddKeyHandler('ArrowRight', () => {
+        let right = player.getBoundingClientRect().right;
         let left = player.getBoundingClientRect().left;
-        player.style.left = `${left + velocityX}px`;
+        let gameRight = game.getBoundingClientRect().right;
+
+        if (right < gameRight - 5)
+            player.style.left = `${left + velocityX}px`;
     });
     inputHandler.AddKeyHandler('ArrowLeft', () => {
         let left = player.getBoundingClientRect().left;
-        player.style.left = `${left - velocityX}px`;
+        let gameLeft = game.getBoundingClientRect().left;
+
+        if (left > gameLeft + 5)
+            player.style.left = `${left - velocityX}px`;
     });
     inputHandler.HandleKeys();
 }
@@ -194,6 +197,6 @@ window.onload = () => {
 
     generateLoopCallback(() => {
         collisionSystem.HandleCollision();
-    }, FPS / 1000);
+    }, 1000);
 }
 
