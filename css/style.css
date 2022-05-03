@@ -6,7 +6,8 @@
 }
 
 :root {
-    --run-speed: 5000ms;
+    --run-speed: 2500ms;
+    --background-width: 1920px;
 }
 
 body {
@@ -19,7 +20,7 @@ body {
     margin: auto;
     margin-top: 1rem;
 
-    /* overflow: hidden; */
+    overflow: hidden;
 }
 .scrolling-background {
     width: 100%;
@@ -29,11 +30,11 @@ body {
     border-radius: 10px;
 }
 .background-tile {
-    background: url(../images/background-tile.png) repeat-x;
+    background: url(../images/sonicTilemap01.png) repeat-x;
     background-size: contain;
     background-position: center;
     height: 100%;
-    width: 3840px;
+    width: 1920px;
 
     animation: background-scroll var(--run-speed) linear infinite;
 }
@@ -43,7 +44,7 @@ body {
         transform: translate(0);
     }
     100% {
-        transform: translate(-1920px);
+        transform: translate(-960px);
     }
 }
 
@@ -53,28 +54,28 @@ body {
 }
 .player {
     position: absolute;
-    top: 45vh;
+    top: 44.5vh;
     left: 13vw;
 
     background-position: center;
     background-size: cover;
 
-    width: 32px;
-    height: 32px;
+    width: 16px;
+    height: 16px;
 
     z-index: 1;
 }
 .coin {
     position: absolute;
-    top: 45vh;
+    top: 44.5vh;
     left: 90vw;
 
     background-image: url(../images/coin.gif);
     background-position: center;
     background-size: cover;
 
-    width: 32px;
-    height: 32px;
+    width: 16px;
+    height: 16px;
 }
 .spikes {
     position: absolute;
@@ -90,7 +91,7 @@ body {
 }
 
 .coin-move-animation {
-    animation: coin-move 7000ms linear forwards;
+    animation: coin-move 2500ms linear forwards;
 }
 @keyframes coin-move {
     0% {
@@ -115,15 +116,15 @@ body {
 
 @keyframes player-jump {
     0% {
-        top: 45vh;
+        top: 44.5vh;
     }
     45% {
-        top: 30vh;
+        top: 39vh;
     }
     50% {
-        top: 30vh;
+        top: 39vh;
     }
     100% {
-        top: 45vh;
+        top: 44.5vh;
     }
 }

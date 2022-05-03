@@ -18,13 +18,15 @@ const generateRect = (element) => {
 
 // I want the collision system to be running on a loop.
 var t;
-const generateLoopCallback = (callback, interval) => {
+const generateLoopCallback = (callback, interval, arr) => {
     let repeat = () => {
-        clearTimeout(t);
         callback();
         t = setTimeout(() => {
             repeat();
         }, interval);
+        if (arr !== undefined) {
+            arr.push(t);
+        }
     }
     repeat();
 }
@@ -88,39 +90,62 @@ class CollisionSystem {
         });
     }
 }
+
+let inputTimeouts = [];
 class InputSystem {
     constructor() {
-        this.keyHandlers = [];
-        this.keyMap = {};
+        this.keyHandlers = {};
     }
 
     AddKeyHandler(key, callBack) {
-        let hasKey = false;
-        if (this.keyHandlers.length > 0) {
-            for (let i = 0; i < this.keyHandlers.length; i++) {
-                if (this.keyHandlers[i].key.toLowerCase() === key.toLowerCase()) {
-                    this.keyHandlers[i].callBacks.push(callBack);
-                    hasKey = true;
-                    break;
-                }
-            }
+        // let hasKey = false;
+
+        if (this.keyHandlers[key] !== undefined) {
+            this.keyHandlers[key].push(callBack);
+        } else {
+            this.keyHandlers[key] = [callBack];
         }
-        if (!hasKey) {
-            this.keyHandlers.push({ key, callBacks: [callBack]});
-        }
+
+        // if (this.keyHandlers.length > 0) {
+        //     for (let i = 0; i < this.keyHandlers.length; i++) {
+        //         if (this.keyHandlers[i].key.toLowerCase() === key.toLowerCase()) {
+        //             this.keyHandlers[i].callBacks.push(callBack);
+        //             hasKey = true;
+        //             break;
+        //         }
+        //     }
+        // }
+        // if (!hasKey) {
+        //     this.keyHandlers.push({ key, callBacks: [callBack]});
+        // }
     }
 
     HandleKeys() {
-        document.onkeydown = document.onkeyup = (e) => {
+        document.onkeydown = (e) => {
             e.preventDefault();
+            // console.log(typeof e.key);
+            // console.log(this.keyHandlers[e.key]);
 
-            this.keyMap[e.key] = e.type === 'keydown';
-            this.keyHandlers.forEach(keyHandler => {
-                if (this.keyMap[keyHandler.key]) {
-                    keyHandler.callBacks.forEach(cb => cb());
-                }
-            });
+            let callBacks = this.keyHandlers[e.key];
+            console.log(callBacks);
+
+            inputTimeouts.forEach(t => clearTimeout(t));
+            let repeat = () => {
+                this.keyHandlers[e.key].forEach(cb => cb());
+                let t = setTimeout(repeat, 10);
+                inputTimeouts.push(t);
+            }
+            repeat();
+            
+            // this.keyMap[e.key] = e.type === 'keydown';
+            // this.keyHandlers.forEach(keyHandler => {
+            //     if (this.keyMap[keyHandler.key]) {
+            //         keyHandler.callBacks.forEach(cb => cb());
+            //     }
+            // });
         }
+
+        document.onkeyup = () => inputTimeouts.forEach(t => clearTimeout(t));
     }
 }
 class AnimationEventSystem {
@@ -187,13 +212,14 @@ const initInputs = () => {
         if (left > gameLeft + 5)
             player.style.left = `${left - velocityX}px`;
     });
-    inputHandler.HandleKeys();
 }
 
 window.onload = () => {
     initCollisionHandlers();
     initAnimEvents();
     initInputs();
+
+    inputHandler.HandleKeys();
 
     generateLoopCallback(() => {
         collisionSystem.HandleCollision();
