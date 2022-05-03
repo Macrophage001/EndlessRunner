@@ -2,6 +2,9 @@ const game = document.querySelector('.game');
 const player = document.querySelector('.player');
 const colliders = document.getElementsByClassName('collider');
 
+const coinTemplate = `<div class="coin collider"></div>`;
+const spikeTemplate = `<div class="spikes collider"></div>`
+
 // I only need the element's x, y, width, and height for my purposes.
 const generateRect = (element) => {
     let boundingRect = element.getBoundingClientRect();
@@ -35,18 +38,28 @@ class CollisionHandler {
     }
 }
 class PlayerCollisionHandler extends CollisionHandler {
-    Handle(colA, colB) {
-        let collidedWith;
-        if (colA === this.element) {
-            collidedWith = colB;
-        } else {
-            collidedWith = colA;
+    Handle(collider) {
+        if (collider.classList[0] === 'coin') {
+            // TODO: Pickup coin and add to score.
+            collider.style.display = 'none';
         }
+        if (collider.classList[0] === 'obstacle') {
 
-        // console.log(`${this.element.className} hit ${collidedWith.className}`);
+        }
     }
 }
 
+class CollectibleSystem {
+    constructor() {
+        this.collectibles = {};
+    }
+    AddCollectible(className, pointValue) {
+        this.collectibles[className] = pointValue;
+    }
+    OnCollect(className) {
+        return this.collectibles[className];
+    }
+}
 class CollisionSystem {
     constructor() {
         this.collisionHandlers = [];
@@ -57,30 +70,26 @@ class CollisionSystem {
         this.collisionHandlers.push(collisionHandler);
     }
 
-    CheckCollision(rect1, rect2) {
-        if (rect1.x < rect2.x + rect2.width || rect1.x + rect1.width > rect2.x ||
-            rect1.y < rect2.y + rect2.height || rect1.y + rect1.height > rect2.y) {
-            return true;
-        }
-        return false;
-    }
-    HandleCollision() {
-        for (let i = 0; i < this.colliders.length; i++) {
-            let collider1 = colliders[i];
-            for (let j = 0; j < this.colliders.length; j++) {
-                let collider2 = colliders[j];
-                if (collider1 === collider2) continue;
-                let colliderRect1 = generateRect(collider1);
-                let colliderRect2 = generateRect(collider2);
+    // Source: https://stackoverflow.com/questions/9768291/check-collision-between-certain-divs
+    Overlap(colA, colB) {
+        const rectA = colA.getBoundingClientRect();
+        const rectB = colB.getBoundingClientRect();
 
-                if (this.CheckCollision(colliderRect1, colliderRect2)) {
-                    // onCollision(collider1, collider2);
-                    for (let k = 0; k < this.collisionHandlers.length; k++) {
-                        this.collisionHandlers[k].Handle(collider1, collider2);
-                    }
+        const inHorizontalBounds = rectA.x < rectB.x + rectB.width && rectA.x + rectA.width > rectB.x;
+        const inVerticalBounds = rectA.y < rectB.y + rectB.height && rectA.y + rectA.height > rectB.y;
+
+        return inHorizontalBounds && inVerticalBounds;
+    }
+
+    HandleCollision() {
+        this.collisionHandlers.forEach(handler => {
+            for (let i = 0; i < this.colliders.length; i++) {
+                let collider = this.colliders[i];
+                if (this.Overlap(handler.element, collider)) {
+                    handler.Handle(collider);
                 }
             }
-        }
+        });
     }
 }
 class InputHandler {
@@ -107,6 +116,8 @@ class InputHandler {
 
     HandleKeys() {
         document.onkeydown = document.onkeyup = (e) => {
+            e.preventDefault();
+
             this.keyMap[e.key] = e.type === 'keydown';
             this.keyHandlers.forEach(keyHandler => {
                 if (this.keyMap[keyHandler.key]) {
@@ -128,20 +139,34 @@ class AnimationEventHandler {
     HandleAnimationEvents() {
         for (let i = 0; i < this.animationEventHandlers.length; i++) {
             let evHandler = this.animationEventHandlers[i];
-            document.addEventListener(evHandler.eventType, () => evHandler.callBack());
+            document.addEventListener(evHandler.eventType, () => {
+                if (evHandler.element.classList.contains(evHandler.animationName)) {
+                    evHandler.callBack()
+                }
+            });
         }
     }
 }
 
 const FPS = 60;
 
-const mainCollisionSystem = new CollisionSystem();
-const mainAnimEvHandler = new AnimationEventHandler();
-const inputHandler = new InputHandler();
+const collisionSystem   = new CollisionSystem();
+const animEventHandler  = new AnimationEventHandler();
+const collectibleSystem = new CollectibleSystem();
+const inputHandler      = new InputHandler();
 
 const velocityX = 4;
 
-const initAnimEventHandler = () => {
+const initCollisionHandlers = () => {
+    collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));   
+}
+const initAnimEvents = () => {
+    animEventHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
+        player.classList.remove('player-jump-animation');
+        player.classList.toggle('player-jumping');
+        player.classList.toggle('player-running');
+    });
+    animEventHandler.HandleAnimationEvents();
 }
 const initInputs = () => {
     inputHandler.AddKeyHandler(' ', () => {
@@ -163,18 +188,12 @@ const initInputs = () => {
 }
 
 window.onload = () => {
-    mainCollisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
-    mainAnimEvHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
-        player.classList.remove('player-jump-animation');
-        player.classList.toggle('player-jumping');
-        player.classList.toggle('player-running');
-    });
-    mainAnimEvHandler.HandleAnimationEvents();
-
+    initCollisionHandlers();
+    initAnimEvents();
     initInputs();
 
     generateLoopCallback(() => {
-        mainCollisionSystem.HandleCollision((col1, col2) => { });
+        collisionSystem.HandleCollision();
     }, FPS / 1000);
 }
 
