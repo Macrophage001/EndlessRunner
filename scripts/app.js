@@ -1,6 +1,11 @@
+const root = document.querySelector(':root');
+
 const game = document.querySelector('.game');
 const player = document.querySelector('.player');
 const colliders = document.getElementsByClassName('collider');
+
+const progressBarThumb = document.querySelector('.progress-bar-thumb');
+const progressBarTrail = document.querySelector('.progress-bar-trail');
 
 const coinTemplate = `<div class="coin collider"></div>`;
 const spikeTemplate = `<div class="spikes collider"></div>`
@@ -18,17 +23,40 @@ const generateRect = (element) => {
 
 // I want the collision system to be running on a loop.
 var t;
+var i;
+
+let mainIntervals = [];
 const generateLoopCallback = (callback, interval, arr) => {
-    let repeat = () => {
-        callback();
-        t = setTimeout(() => {
-            repeat();
+    if (arr) {
+        arr.push(setInterval(() => {
+            callback();
+        }, interval));
+    } else {
+        i = setInterval(() => {
+            callback();
         }, interval);
-        if (arr !== undefined) {
-            arr.push(t);
-        }
     }
-    repeat();
+    
+    // let repeat = () => {
+    //     callback();
+    //     t = setTimeout(() => {
+    //         repeat();
+    //     }, interval);
+    //     if (arr !== undefined) {
+    //         arr.push(t);
+    //     }
+    // }
+    // repeat();
+}
+
+const playerLeaveAnimation = () => ([
+    { left: `${Math.trunc(100 * (player.getBoundingClientRect().left / window.innerWidth))}vw` },
+    { left: `90vw` }
+]);
+const playerLeaveTiming = {
+    duration: 3000,
+    iterations: 1,
+    fill: 'forwards'
 }
 
 class CollisionHandler {
@@ -91,61 +119,36 @@ class CollisionSystem {
     }
 }
 
-let inputTimeouts = [];
+let inputIntervals = {};
 class InputSystem {
     constructor() {
         this.keyHandlers = {};
     }
 
     AddKeyHandler(key, callBack) {
-        // let hasKey = false;
-
         if (this.keyHandlers[key] !== undefined) {
             this.keyHandlers[key].push(callBack);
         } else {
             this.keyHandlers[key] = [callBack];
         }
-
-        // if (this.keyHandlers.length > 0) {
-        //     for (let i = 0; i < this.keyHandlers.length; i++) {
-        //         if (this.keyHandlers[i].key.toLowerCase() === key.toLowerCase()) {
-        //             this.keyHandlers[i].callBacks.push(callBack);
-        //             hasKey = true;
-        //             break;
-        //         }
-        //     }
-        // }
-        // if (!hasKey) {
-        //     this.keyHandlers.push({ key, callBacks: [callBack]});
-        // }
     }
 
     HandleKeys() {
         document.onkeydown = (e) => {
             e.preventDefault();
-            // console.log(typeof e.key);
-            // console.log(this.keyHandlers[e.key]);
-
-            let callBacks = this.keyHandlers[e.key];
-            console.log(callBacks);
-
-            inputTimeouts.forEach(t => clearTimeout(t));
-            let repeat = () => {
-                this.keyHandlers[e.key].forEach(cb => cb());
-                let t = setTimeout(repeat, 10);
-                inputTimeouts.push(t);
+            if (inputIntervals[e.key] === undefined) {
+                inputIntervals[e.key] = setInterval(() => {
+                    this.keyHandlers[e.key].forEach(cb => cb());
+                });
             }
-            repeat();
-            
-            // this.keyMap[e.key] = e.type === 'keydown';
-            // this.keyHandlers.forEach(keyHandler => {
-            //     if (this.keyMap[keyHandler.key]) {
-            //         keyHandler.callBacks.forEach(cb => cb());
-            //     }
-            // });
         }
 
-        document.onkeyup = () => inputTimeouts.forEach(t => clearTimeout(t));
+        document.onkeyup = () => {
+            for (const prop in inputIntervals) {
+                clearInterval(inputIntervals[prop]);
+            }
+            inputIntervals = {};
+        }
     }
 }
 class AnimationEventSystem {
@@ -168,61 +171,114 @@ class AnimationEventSystem {
         }
     }
 }
+class DistanceSystem {
+    constructor(maxDst, dstIncrement, scrollingBGDiv) {
+        this.maxDst = maxDst;
+        this.defaultDstIncrement = this.dstIncrement = dstIncrement;
+        this.distanceTraveled = 0;
+        this.percentageTraveled = 0;
+        this.scrollingBGDiv = scrollingBGDiv;
+        this.dstTraveledTimeouts = [];
+        this.dstReached = false;
+    }
+    Pause() {
+        this.dstIncrement = 0;
+        root.style.setProperty('--run-speed', '0ms');
+        this.dstTraveledTimeouts.forEach(t => clearTimeout(t));
+    }
+    Start() {
+        this.dstIncrement = this.defaultDstIncrement;
+        root.style.setProperty('--run-speed', '3500ms');
+        this.UpdateDistanceTraveled();
+    }
+
+    UpdateDistanceTraveled() {
+        generateLoopCallback(() => {
+            this.distanceTraveled += this.dstIncrement;
+            this.percentageTraveled = (this.distanceTraveled / this.maxDst);
+            if (this.percentageTraveled < 1) {
+                let thumbPositionX = lerp(-1, 23, this.percentageTraveled);
+                progressBarThumb.style.left = `${thumbPositionX}vw`;
+                progressBarTrail.style.width = `${this.percentageTraveled * 100}%`;
+            }
+            else {
+                this.Pause();
+                game.style.position = 'relative';
+                player.style.top = '54.5vh';
+                player.style.left = '50%';
+                if (!this.dstReached) {
+                    player.animate(playerLeaveAnimation(), playerLeaveTiming);
+                }
+                this.dstReached = true;
+            }
+        }, 10, this.dstTraveledTimeouts);
+    }
+}
 
 const FPS = 60;
+const velocityX = 2.5;
+const maxDst = 100;
+const dstIncrement = 0.1;
 
 const collisionSystem   = new CollisionSystem();
-const animEventHandler  = new AnimationEventSystem();
+const animEventSystem   = new AnimationEventSystem();
 const collectibleSystem = new CollectibleSystem();
-const inputHandler      = new InputSystem();
+const inputSystem       = new InputSystem();
+const distanceSystem    = new DistanceSystem(maxDst, dstIncrement);
 
-const velocityX = 4;
+let distanceTravelled = 0;
 
 const initCollisionHandlers = () => {
     collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));   
 }
 const initAnimEvents = () => {
-    animEventHandler.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
+    animEventSystem.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
         player.classList.remove('player-jump-animation');
         player.classList.toggle('player-jumping');
         player.classList.toggle('player-running');
     });
-    animEventHandler.HandleAnimationEvents();
+    animEventSystem.HandleAnimationEvents();
 }
 const initInputs = () => {
-    inputHandler.AddKeyHandler(' ', () => {
+    inputSystem.AddKeyHandler(' ', () => {
         if (!player.classList.contains('player-jump-animation')) {
             player.classList.add('player-jump-animation');
             player.classList.toggle('player-running');
             player.classList.toggle('player-jumping');
         }
     });
-    inputHandler.AddKeyHandler('ArrowRight', () => {
-        let right = player.getBoundingClientRect().right;
-        let left = player.getBoundingClientRect().left;
+    inputSystem.AddKeyHandler('ArrowRight', () => {
+        let right     = player.getBoundingClientRect().right;
+        let left      = player.getBoundingClientRect().left;
         let gameRight = game.getBoundingClientRect().right;
 
         if (right < gameRight - 5)
             player.style.left = `${left + velocityX}px`;
     });
-    inputHandler.AddKeyHandler('ArrowLeft', () => {
+    inputSystem.AddKeyHandler('ArrowLeft', () => {
         let left = player.getBoundingClientRect().left;
         let gameLeft = game.getBoundingClientRect().left;
 
-        if (left > gameLeft + 5)
+        if (left > gameLeft + 5) {
             player.style.left = `${left - velocityX}px`;
+        }
     });
 }
+
+const lerp = (v0, v1, t) => v0 * (1 - t) + v1 * t;
+
+let dstTravelledTimeouts = [];
 
 window.onload = () => {
     initCollisionHandlers();
     initAnimEvents();
     initInputs();
 
-    inputHandler.HandleKeys();
+    inputSystem.HandleKeys();
 
     generateLoopCallback(() => {
         collisionSystem.HandleCollision();
-    }, 1000);
+    }, FPS / 1000);
+    distanceSystem.Start();
 }
 

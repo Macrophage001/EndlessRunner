@@ -6,8 +6,10 @@
 }
 
 :root {
-    --run-speed: 2500ms;
+    --run-speed: 3500ms;
     --background-width: 1920px;
+    --ground-position: 57vh;
+    --jump-height: 50vh;
 }
 
 body {
@@ -16,35 +18,74 @@ body {
 
 .game {
     width: 75vw;
-    height: 50vh;
+    height: 65vh;
+
     margin: auto;
     margin-top: 1rem;
 
-    overflow: hidden;
-}
-.scrolling-background {
-    width: 100%;
-    height: 50vh;
+    border-radius: 10px;
 
     overflow: hidden;
-    border-radius: 10px;
 }
-.background-tile {
+
+.progress-bar {
+    position: absolute;
+    top: 5vh;
+    left: 50%;
+
+    transform: translate(-50%);
+
+    z-index: 1;
+
+    width: 24vw;
+    height: 8px;
+    background-color: #f1f1f1;
+}
+.progress-bar-thumb {
+    position: relative;
+    top: -1vh;
+    /* -1 = 0% 23vw = 100% */
+    left: -1vw;
+
+    z-index: 1;
+
+    background-image: url(../images/sonicJump.webp);
+    background-position: center;
+    background-size: cover;
+    width: 24px;
+    height: 24px;
+}
+.progress-bar-trail {
+    position: absolute;
+    top: 0;
+
+    max-width: 23.5vw;
+    width: 0%;
+    height: 6px;
+
+    background-color: red;
+}
+
+.scrolling-background {
+    width: 100%;
+    height: 65vh;
+
     background: url(../images/sonicTilemap01.png) repeat-x;
     background-size: contain;
     background-position: center;
+
     height: 100%;
-    width: 1920px;
+    width: 3072px;
 
     animation: background-scroll var(--run-speed) linear infinite;
 }
 
 @keyframes background-scroll {
     0% {
-        transform: translate(0);
+        transform: translate(0%);
     }
     100% {
-        transform: translate(-960px);
+        transform: translate(-50%);
     }
 }
 
@@ -54,7 +95,7 @@ body {
 }
 .player {
     position: absolute;
-    top: 44.5vh;
+    top: var(--ground-position);
     left: 13vw;
 
     background-position: center;
@@ -62,12 +103,10 @@ body {
 
     width: 16px;
     height: 16px;
-
-    z-index: 1;
 }
 .coin {
     position: absolute;
-    top: 44.5vh;
+    top: var(--ground-position);
     left: 90vw;
 
     background-image: url(../images/coin.gif);
@@ -79,7 +118,7 @@ body {
 }
 .spikes {
     position: absolute;
-    top: 45vh;
+    top: var(--ground-position);
     left: 90vw;
 
     background-image: url(../images/sonicSpikes.webp);
@@ -113,18 +152,17 @@ body {
 .player-jump-animation {
     animation: player-jump 500ms forwards;
 }
-
 @keyframes player-jump {
     0% {
-        top: 44.5vh;
+        top: var(--ground-position);
     }
     45% {
-        top: 39vh;
+        top: var(--jump-height);
     }
     50% {
-        top: 39vh;
+        top: var(--jump-height);
     }
     100% {
-        top: 44.5vh;
+        top: var(--ground-position);
     }
 }
