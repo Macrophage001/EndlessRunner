@@ -143,11 +143,13 @@ class InputSystem {
             }
         }
 
-        document.onkeyup = () => {
+        document.onkeyup = (e) => {
             for (const prop in inputIntervals) {
-                clearInterval(inputIntervals[prop]);
+                if (prop === e.key) {
+                    clearInterval(inputIntervals[prop]);
+                    inputIntervals[e.key] = undefined;
+                }
             }
-            inputIntervals = {};
         }
     }
 }
@@ -216,7 +218,7 @@ class DistanceSystem {
 }
 
 const FPS = 60;
-const velocityX = 2.5;
+const velocityX = 1.5;
 const maxDst = 100;
 const dstIncrement = 0.1;
 
