@@ -160,10 +160,17 @@ let currentLevel = 1;
 let playerScore  = 0;
 let playerHearts = 3;
 
+const levelMaps = {
+    1: {maxDst: 100, minObstacleSpawnChance: 0.5, maxObstacleSpawnChance: 0.8 },
+    2: {maxDst: 150, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
+    3: {maxDst: 200, minObstacleSpawnChance: 0.6, maxObstacleSpawnChance: 0.8 },
+    4: {maxDst: 250, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
+    4: {maxDst: 300, minObstacleSpawnChance: 0.7, maxObstacleSpawnChance: 0.8 }
+}
+
 const lerp = (v0, v1, t) => v0 * (1 - t) + v1 * t;
 const clamp = (v, min, max) => v < min ? v = min : v > max ? v = max : v;
 const range = (min, max) => Math.random() * (max - min) + min;
-
 
 // GAME STATES:
 class GameState {
@@ -402,11 +409,15 @@ class DistanceSystem {
         this.dstTraveledTimeouts.forEach(t => clearTimeout(t));
     }
     Start() {
+        this.maxDst = levelMaps[currentLevel].maxDst;
+
         this.dstIncrement = this.defaultDstIncrement;
         this.SetSpeed(5500);
         this.UpdateDistanceTraveled();
     }
     Restart() {
+        this.maxDst = levelMaps[currentLevel].maxDst;
+
         this.dstIncrement = this.defaultDstIncrement;
         this.percentageTraveled = 0;
         this.distanceTraveled = 0;
@@ -502,6 +513,11 @@ const checkPlayerLost = () => {
 }
 
 const startNextLevel = (element) => {
+    currentLevel++;
+
+    minObstacleSpawnChance = levelMaps[currentLevel].minObstacleSpawnChance;
+    maxObstacleSpawnChance = levelMaps[currentLevel].maxObstacleSpawnChance;
+
     resetPlayer();
 
     distanceSystem.Restart();
@@ -645,7 +661,7 @@ const init = () => {
 
     generateLoopCallback(() => {
         update();
-    }, FPS / 1000, mainIntervals);
+    }, 1000 / FPS, mainIntervals);
     generateLoopCallback(() => {
         if (currentState === GameState.PLAYING) {
             let spawnChance = Math.random();
