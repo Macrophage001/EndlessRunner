@@ -13,7 +13,6 @@ const endCard          = document.querySelector('.end-card');
 const progressBarThumb = document.querySelector('.progress-bar-thumb');
 const progressBarTrail = document.querySelector('.progress-bar-trail');
 
-
 const interactablePatternTemplates = [
     `
         <div class="interactable-pattern coin-move-animation">
@@ -105,9 +104,6 @@ const interactablePatternTemplates = [
             <div class="obstacle-spike-trap collider"></div>
             <div class="empty"></div>
             <div class="empty"></div>
-            <div class="empty"></div>
-            <div class="empty"></div>
-            <div class="obstacle-spike-trap collider"></div>
             <div class="empty"></div>
             <div class="empty"></div>
             <div class="empty"></div>
@@ -227,16 +223,6 @@ const generateLoopCallback = (callback, interval, arr) => {
             callback();
         }, interval);
     }
-}
-
-const playerLeaveAnimation = () => ([
-    { left: `${Math.trunc(100 * (player.getBoundingClientRect().left / window.innerWidth))}vw` },
-    { left: `90vw` }
-]);
-const playerLeaveTiming = {
-    duration: 3000,
-    iterations: 1,
-    fill: 'forwards'
 }
 
 class CollisionHandler {

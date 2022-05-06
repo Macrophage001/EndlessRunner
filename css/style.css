@@ -15,7 +15,7 @@
     --run-speed: 2500ms;
     --background-width: 1920px;
     --ground-position: 55vh;
-    --jump-height: 48vh;
+    --jump-height: 46vh;
 }
 
 body {
@@ -335,4 +335,9 @@ body {
 }
 .controls * {
     text-align: center;
+}
+.hidden {
+    width: 1px;
+    height: 1px;
+    opacity: 0;
 }
