@@ -149,6 +149,11 @@ const velocityX = 1.5;
 const maxDst = 100;
 const dstIncrement = 0.02;
 
+const minObstacleSpawnChance = 0.50;
+const maxObstacleSpawnChance = 0.80;
+
+var obstacleSpawnChance = minObstacleSpawnChance;
+
 let distanceTravelled = 0;
 
 let currentLevel = 1;
@@ -271,7 +276,7 @@ class SpikeTrapInteractable extends InteractableSystem {
 
     OnCollect() {
         modPlayerScore(-75);
-        decrementPlayerHearts();
+        decreasePlayerHearts();
     }
 }
 class HeartInteractable extends InteractableSystem {
@@ -485,13 +490,6 @@ const modPlayerScore = (score) => {
     playerScoreDiv.innerHTML = playerScore;
 }
 
-const updatePlayerHeartsDisplay = () => {
-    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
-    if (heartsDisplayedCount !== playerHearts) {
-        playerHeartsDiv.innerHTML = playerHeartsTemplate(playerHearts);
-    }
-}
-
 const checkPlayerWon = () => {
     if (distanceSystem.percentageTraveled >= 1 && playerHearts > 0) {
         currentState = GameState.WIN;
@@ -503,47 +501,11 @@ const checkPlayerLost = () => {
     }
 }
 
-const onPlayerWon = () => {
-    if (currentState === GameState.WIN) {
-        inputSystem.DisableKeys();
-        distanceSystem.Pause();
-        
-        player.classList.remove('player-jump-animation');
-        player.classList.remove('player-jumping');
-        player.classList.remove('player-running');
-        player.classList.add('player-won');
-
-        clearInterval(i);
-
-        game.append(generateHTML(endCardTemplate(GameState.WIN, playerScore)));
-    }
-}
-const onPlayerLost = () => {
-    if (currentState === GameState.LOSE) {
-        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
-        inputSystem.DisableKeys();
-        distanceSystem.Pause();
-        modPlayerScore(0);
-
-        player.classList.remove('player-jump-animation');
-        player.classList.remove('player-jumping');
-        player.classList.remove('player-running');
-        player.classList.add('player-won');
-
-        clearInterval(i);
-
-        game.append(generateHTML(endCardTemplate(GameState.LOSE, playerScore)));
-    }
-}
-
 const startNextLevel = (element) => {
-    currentState = GameState.PLAYING;
-
-    playerHearts = 3;
-    setPlayerScore(0);
-    player.style.left = '13vw';
+    resetPlayer();
 
     distanceSystem.Restart();
+
     let endCard = element.parentNode.parentNode;
     endCard.remove();
 
@@ -557,6 +519,8 @@ const startNextLevel = (element) => {
     generateLoopCallback(() => {
         update();
     }, FPS / 1000);
+
+    currentState = GameState.PLAYING;
 }
 
 const resetPlayerProperties = () => {
@@ -596,8 +560,41 @@ const restartGame = (element) => {
     currentState = GameState.PLAYING;
 }
 
-const decrementPlayerHearts = () => {
+const decreasePlayerHearts = () => {
     playerHearts = clamp(playerHearts - 1, 0, 3);
+}
+
+const onPlayerWon = () => {
+    if (currentState === GameState.WIN) {
+        inputSystem.DisableKeys();
+        distanceSystem.Pause();
+        
+        player.classList.remove('player-jump-animation');
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+        player.classList.add('player-won');
+
+        clearInterval(i);
+
+        game.append(generateHTML(endCardTemplate(GameState.WIN, playerScore)));
+    }
+}
+const onPlayerLost = () => {
+    if (currentState === GameState.LOSE) {
+        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
+        inputSystem.DisableKeys();
+        distanceSystem.Pause();
+        modPlayerScore(0);
+
+        player.classList.remove('player-jump-animation');
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+        player.classList.add('player-won');
+
+        clearInterval(i);
+
+        game.append(generateHTML(endCardTemplate(GameState.LOSE, playerScore)));
+    }
 }
 
 const collisionSystem = new CollisionSystem();
@@ -605,27 +602,27 @@ const animEventSystem = new AnimationEventSystem();
 const inputSystem     = new InputSystem();
 const distanceSystem  = new DistanceSystem(maxDst, dstIncrement);
 
+const updatePlayerHeartsDisplay = () => {
+    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
+    if (heartsDisplayedCount !== playerHearts) {
+        playerHeartsDiv.innerHTML = playerHeartsTemplate(playerHearts);
+    }
+}
+
 let spawningTicks = 0;
 const update = () => {
     switch (currentState) {
         case GameState.WIN:
             clearInterval(i);
+            mainIntervals.forEach(i => clearInterval(i));
             onPlayerWon();
             break;
         case GameState.LOSE:
             clearInterval(i);
+            mainIntervals.forEach(i => clearInterval(i));
             onPlayerLost();
             break;
         case GameState.PLAYING:
-            if (spawningTicks === 1000) {
-                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
-                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
-
-                game.append(interactable);
-                spawningTicks = 0;
-            } else {
-                spawningTicks++;
-            }
             inputSystem.HandleKeys();
                 
             collisionSystem.HandleCollision();
@@ -633,6 +630,9 @@ const update = () => {
 
             checkPlayerWon();
             checkPlayerLost();
+            break;
+        default:
+            console.error('Invalid State!', currentState);
             break;
     }
 }
@@ -645,7 +645,21 @@ const init = () => {
 
     generateLoopCallback(() => {
         update();
-    }, FPS / 1000);
+    }, FPS / 1000, mainIntervals);
+    generateLoopCallback(() => {
+        if (currentState === GameState.PLAYING) {
+            let spawnChance = Math.random();
+            if (spawnChance <= obstacleSpawnChance) {
+                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
+                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
+
+                game.append(interactable);
+            }
+        }
+    }, 2000, mainIntervals);
+    generateLoopCallback(() => {
+        obstacleSpawnChance = clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
+    }, 2000, mainIntervals);
     distanceSystem.Start();
 }
 
