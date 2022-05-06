@@ -19,6 +19,35 @@ const interactablePatternTemplates = [
             <div class="coin collider"></div>
             <div class="coin collider"></div>
             <div class="coin collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="heart collider"><h2>&hearts;</h2></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="coin collider"></div>
             <div class="coin collider"></div>
             <div class="coin collider"></div>
         </div>
@@ -26,6 +55,24 @@ const interactablePatternTemplates = [
     `
         <div class="interactable-pattern coin-move-animation">
             <div class="coin collider"></div>
+            <div class="coin-big collider"></div>
+            <div class="coin collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="coin collider"></div>
+            <div class="coin-big collider"></div>
+            <div class="coin collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="coin collider"></div>
+            <div class="coin-big collider"></div>
+            <div class="coin collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
             <div class="coin collider"></div>
             <div class="empty"></div>
             <div class="empty"></div>
@@ -35,6 +82,7 @@ const interactablePatternTemplates = [
             <div class="empty"></div>
             <div class="empty"></div>
             <div class="empty"></div>
+            <div class="coin collider"></div>
             <div class="coin collider"></div>
             <div class="coin collider"></div>
         </div>
@@ -42,7 +90,27 @@ const interactablePatternTemplates = [
     `
         <div class="interactable-pattern coin-move-animation">
             <div class="obstacle-spike-trap collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
             <div class="obstacle-spike-trap collider"></div>
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="obstacle-spike-trap collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
             <div class="obstacle-spike-trap collider"></div>
         </div>
     `
@@ -93,7 +161,6 @@ const range = (min, max) => Math.random() * (max - min) + min;
 
 // GAME STATES:
 class GameState {
-    static INIT    = Symbol('INIT');
     static WIN     = Symbol('WIN');
     static LOSE    = Symbol('LOSE');
     static PLAYING = Symbol('PLAYING');
@@ -133,7 +200,6 @@ const generateHTML = (str) => {
     return dom;
 }
 
-// I want the collision system to be running on a loop.
 var t;
 var i;
 
@@ -205,6 +271,14 @@ class SpikeTrapInteractable extends InteractableSystem {
     OnCollect() {
         modPlayerScore(-75);
         decrementPlayerHearts();
+    }
+}
+class HeartInteractable extends InteractableSystem {
+    constructor() {
+        super('heart');
+    }
+    OnCollect() {
+        playerHearts = clamp(playerHearts + 1, 0, 3);
     }
 }
 
@@ -359,6 +433,7 @@ const initInteractables = () => {
     interactables.push(new CoinInteractable());
     interactables.push(new BigCoinInteractable());
     interactables.push(new SpikeTrapInteractable());
+    interactables.push(new HeartInteractable());
 }
 const initCollisionHandlers = () => collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
 const initAnimEvents = () => {
@@ -431,6 +506,7 @@ const onPlayerWon = () => {
         inputSystem.DisableKeys();
         distanceSystem.Pause();
         
+        player.classList.remove('player-jump-animation');
         player.classList.remove('player-jumping');
         player.classList.remove('player-running');
         player.classList.add('player-won');
@@ -447,6 +523,7 @@ const onPlayerLost = () => {
         distanceSystem.Pause();
         modPlayerScore(0);
 
+        player.classList.remove('player-jump-animation');
         player.classList.remove('player-jumping');
         player.classList.remove('player-running');
         player.classList.add('player-won');

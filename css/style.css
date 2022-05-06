@@ -182,6 +182,13 @@ body {
     width: 16px;
     height: 16px;
 }
+.heart {
+    position: absolute;
+    top: var(--ground-position);
+    left: 90vw;
+
+    color: red;
+}
 .coin-big {
     position: absolute;
     top: calc(var(--ground-position) - 1.5vh);
@@ -225,7 +232,7 @@ body {
     left: 90vw;
 
     display: grid;
-    grid-template-columns: repeat(32, 18px);
+    grid-template-columns: repeat(32, 26px);
     height: 32px
 }
 .interactable-pattern > * {
