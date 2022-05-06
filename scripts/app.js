@@ -149,10 +149,10 @@ const velocityX = 1.5;
 const maxDst = 100;
 const dstIncrement = 0.02;
 
-const minObstacleSpawnChance = 0.50;
-const maxObstacleSpawnChance = 0.80;
+let minObstacleSpawnChance = 0.50;
+let maxObstacleSpawnChance = 0.80;
 
-var obstacleSpawnChance = minObstacleSpawnChance;
+let obstacleSpawnChance = minObstacleSpawnChance;
 
 let distanceTravelled = 0;
 
@@ -206,7 +206,7 @@ const generateHTML = (str) => {
     if (support) {
         var parser = new DOMParser();
         var doc = parser.parseFromString(str, 'text/html');
-        return doc.body;
+        return doc.body.firstChild;
     }
     var dom = document.createElement('div');
     dom.innerHTML = str;
@@ -491,6 +491,27 @@ const initInputs = () => {
     });
 
 }
+const initLoops = () => {
+    generateLoopCallback(() => {
+        update();
+    }, 1000 / FPS, mainIntervals);
+    generateLoopCallback(() => {
+        if (currentState === GameState.PLAYING) {
+            let spawnChance = Math.random();
+            if (spawnChance <= obstacleSpawnChance) {
+                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
+                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
+
+                generatedInteractables.push(interactable);
+
+                game.append(interactable);
+            }
+        }
+    }, 2000, mainIntervals);
+    generateLoopCallback(() => {
+        obstacleSpawnChance = clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
+    }, 2000, mainIntervals);
+}
 
 const setPlayerScore = (score) => {
     playerScore = clamp(score, 0, 9999);
@@ -519,6 +540,7 @@ const startNextLevel = (element) => {
     maxObstacleSpawnChance = levelMaps[currentLevel].maxObstacleSpawnChance;
 
     resetPlayer();
+    resetGeneratedInteractables();
 
     distanceSystem.Restart();
 
@@ -532,13 +554,14 @@ const startNextLevel = (element) => {
         activeColliders[i].remove();
     }
 
-    generateLoopCallback(() => {
-        update();
-    }, FPS / 1000);
+    initLoops();
 
     currentState = GameState.PLAYING;
 }
 
+const resetGeneratedInteractables = () => {
+    generatedInteractables.forEach(i => i.remove());
+}
 const resetPlayerProperties = () => {
     player.classList.remove('player-won');
     player.classList.remove('player-lost'); // In case I add a player-lost css property.
@@ -556,6 +579,7 @@ const resetPlayer = () => {
 }
 const restartGame = (element) => {
     resetPlayer();
+    resetGeneratedInteractables();
 
     distanceSystem.Restart();
 
@@ -569,9 +593,7 @@ const restartGame = (element) => {
         activeColliders[i].remove();
     }
 
-    generateLoopCallback(() => {
-        update();
-    }, FPS / 1000);
+    initLoops();
 
     currentState = GameState.PLAYING;
 }
@@ -605,6 +627,7 @@ const onPlayerLost = () => {
         player.classList.remove('player-jump-animation');
         player.classList.remove('player-jumping');
         player.classList.remove('player-running');
+
         player.classList.add('player-won');
 
         clearInterval(i);
@@ -653,29 +676,15 @@ const update = () => {
     }
 }
 
+let generatedInteractables = [];
 const init = () => {
     initInteractables();
     initCollisionHandlers();
     initAnimEvents();
     initInputs();
+    initLoops();
 
-    generateLoopCallback(() => {
-        update();
-    }, 1000 / FPS, mainIntervals);
-    generateLoopCallback(() => {
-        if (currentState === GameState.PLAYING) {
-            let spawnChance = Math.random();
-            if (spawnChance <= obstacleSpawnChance) {
-                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
-                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
-
-                game.append(interactable);
-            }
-        }
-    }, 2000, mainIntervals);
-    generateLoopCallback(() => {
-        obstacleSpawnChance = clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
-    }, 2000, mainIntervals);
+    
     distanceSystem.Start();
 }
 

@@ -14,7 +14,7 @@
 :root {
     --run-speed: 2500ms;
     --background-width: 1920px;
-    --ground-position: 56vh;
+    --ground-position: 55vh;
     --jump-height: 48vh;
 }
 
@@ -149,7 +149,7 @@ body {
 }
 .player {
     position: absolute;
-    top: calc(var(--ground-position) - 1vh);
+    top: calc(var(--ground-position));
     left: 13vw;
 
     background-position: center;
@@ -204,7 +204,7 @@ body {
 
 .obstacle-spike-trap {
     position: absolute;
-    top: calc(var(--ground-position) - 1.5vh);
+    top: calc(var(--ground-position));
     left: 90vw;
 
     background-image: url(../images/sonicSpikes.webp);
@@ -228,7 +228,7 @@ body {
 }
 .interactable-pattern {
     position: absolute;
-    top: calc(var(--ground-position));
+    top: calc(var(--ground-position) + 1vh);
     left: 90vw;
 
     display: grid;
