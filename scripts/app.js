@@ -1,14 +1,105 @@
 const root = document.querySelector(':root');
+const body = document.querySelector('body');
 
-const game = document.querySelector('.game');
-const player = document.querySelector('.player');
-const colliders = document.getElementsByClassName('collider');
+const game             = document.querySelector('.game');
+const player           = document.querySelector('.player');
+const playerScoreDiv   = document.querySelector('.score h2');
+const playerHeartsDiv  = document.querySelector('.hearts ul');
+const colliders        = document.getElementsByClassName('collider');
+const spawnArea        = document.querySelector('.spawn-area');
+const endCard          = document.querySelector('.end-card');
 
 const progressBarThumb = document.querySelector('.progress-bar-thumb');
 const progressBarTrail = document.querySelector('.progress-bar-trail');
 
-const coinTemplate = `<div class="coin collider"></div>`;
-const spikeTemplate = `<div class="spikes collider"></div>`
+
+const interactablePatternTemplates = [
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="empty"></div>
+            <div class="coin collider"></div>
+            <div class="coin collider"></div>
+        </div>
+    `,
+    `
+        <div class="interactable-pattern coin-move-animation">
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="obstacle-spike-trap collider"></div>
+            <div class="obstacle-spike-trap collider"></div>
+        </div>
+    `
+]
+
+const playerHeartsTemplate = (heartsCount) => {
+    let heartElements = '';
+    for (let i = 0; i < heartsCount; i++) {
+        heartElements += '<li>&hearts;</li>';
+    }
+    return `${heartElements}`
+}
+const endCardTemplate = (state, points) => `
+    <div class="end-card end-card-animation">
+        <h2>
+            ${
+                state === GameState.WIN
+                ? 'You Win!'
+                : 'You Lose!'
+            }
+        </h2>
+        <div class="end-score"><div class="coin-icon"></div><h2>${points}</h2></div>
+        <div class="controls">
+            ${
+                state === GameState.WIN
+                ? '<button onclick="startNextLevel(this)"><h2>Next Level</h2></button>'
+                : '<button onclick="restartGame(this)"><h2>Restart</h2></button>'
+            }
+        </div>
+    </div>
+`
+
+const FPS = 60;
+const velocityX = 1.5;
+const maxDst = 100;
+const dstIncrement = 0.02;
+
+let distanceTravelled = 0;
+
+let currentLevel = 1;
+let playerScore  = 0;
+let playerHearts = 3;
+
+const lerp = (v0, v1, t) => v0 * (1 - t) + v1 * t;
+const clamp = (v, min, max) => v < min ? v = min : v > max ? v = max : v;
+const range = (min, max) => Math.random() * (max - min) + min;
+
+
+// GAME STATES:
+class GameState {
+    static INIT    = Symbol('INIT');
+    static WIN     = Symbol('WIN');
+    static LOSE    = Symbol('LOSE');
+    static PLAYING = Symbol('PLAYING');
+}
+
+let currentState = GameState.PLAYING;
 
 // I only need the element's x, y, width, and height for my purposes.
 const generateRect = (element) => {
@@ -20,6 +111,27 @@ const generateRect = (element) => {
         height: boundingRect.height
     };
 };
+const support = (function() {
+    if (!window.DOMParser) return false;
+    var parser = new DOMParser();
+    try {
+        parser.parseFromString('x', 'text/html');
+    } catch (err) {
+        console.trace(err);
+        return false;
+    }
+    return true;
+})();
+const generateHTML = (str) => {
+    if (support) {
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(str, 'text/html');
+        return doc.body;
+    }
+    var dom = document.createElement('div');
+    dom.innerHTML = str;
+    return dom;
+}
 
 // I want the collision system to be running on a loop.
 var t;
@@ -36,17 +148,6 @@ const generateLoopCallback = (callback, interval, arr) => {
             callback();
         }, interval);
     }
-    
-    // let repeat = () => {
-    //     callback();
-    //     t = setTimeout(() => {
-    //         repeat();
-    //     }, interval);
-    //     if (arr !== undefined) {
-    //         arr.push(t);
-    //     }
-    // }
-    // repeat();
 }
 
 const playerLeaveAnimation = () => ([
@@ -66,26 +167,47 @@ class CollisionHandler {
 }
 class PlayerCollisionHandler extends CollisionHandler {
     Handle(collider) {
-        if (collider.classList[0] === 'coin') {
-            // TODO: Pickup coin and add to score.
-            collider.style.display = 'none';
-        }
-        if (collider.classList[0] === 'obstacle') {
-
-        }
+        interactables.forEach(i => {
+            if (i.className === collider.classList[0]) {
+                i.OnCollect();
+                collider.className = 'empty';
+            }
+        });
     }
 }
-class CollectibleSystem {
+class InteractableSystem {
+    constructor(className) {
+        this.className = className;
+    }
+    OnCollect() { };
+}
+class CoinInteractable extends InteractableSystem {
     constructor() {
-        this.collectibles = {};
+        super('coin');
     }
-    AddCollectible(className, pointValue) {
-        this.collectibles[className] = pointValue;
-    }
-    OnCollect(className) {
-        return this.collectibles[className];
+    OnCollect() {
+        modPlayerScore(100);
     }
 }
+class BigCoinInteractable extends InteractableSystem {
+    constructor() {
+        super('coin-big');
+    }
+    OnCollect() {
+        modPlayerScore(200);
+    }
+}
+class SpikeTrapInteractable extends InteractableSystem {
+    constructor() {
+        super('obstacle-spike-trap');
+    }
+
+    OnCollect() {
+        modPlayerScore(-75);
+        decrementPlayerHearts();
+    }
+}
+
 class CollisionSystem {
     constructor() {
         this.collisionHandlers = [];
@@ -125,11 +247,13 @@ class InputSystem {
         this.keyHandlers = {};
     }
 
-    AddKeyHandler(key, callBack) {
+    AddKeyHandler(key, onKeyDown, onKeyUp) {
         if (this.keyHandlers[key] !== undefined) {
-            this.keyHandlers[key].push(callBack);
+            this.keyHandlers[key].push(onKeyDown);
+            this.keyHandlers[key].keyDown.push(onKeyDown);
+            this.keyHandlers[key].keyUp.push(onKeyUp);
         } else {
-            this.keyHandlers[key] = [callBack];
+            this.keyHandlers[key] = { keyDown: [onKeyDown], keyUp: [onKeyUp] };
         }
     }
 
@@ -138,19 +262,27 @@ class InputSystem {
             e.preventDefault();
             if (inputIntervals[e.key] === undefined) {
                 inputIntervals[e.key] = setInterval(() => {
-                    this.keyHandlers[e.key].forEach(cb => cb());
+                    this.keyHandlers[e.key].keyDown.forEach(cb => cb());
                 });
             }
         }
 
         document.onkeyup = (e) => {
-            for (const prop in inputIntervals) {
-                if (prop === e.key) {
-                    clearInterval(inputIntervals[prop]);
-                    inputIntervals[e.key] = undefined;
+            e.preventDefault();
+            if (inputIntervals[e.key] !== undefined) {
+                for (const prop in inputIntervals) {
+                    if (prop === e.key) {
+                        clearInterval(inputIntervals[prop]);
+                        inputIntervals[e.key] = undefined;
+                        this.keyHandlers[e.key].keyUp.forEach(cb => { if (typeof cb === 'function') cb() });
+                    }
                 }
             }
         }
+    }
+    DisableKeys() {
+        document.onkeydown = null;
+        document.onkeyup   = null;
     }
 }
 class AnimationEventSystem {
@@ -173,6 +305,7 @@ class AnimationEventSystem {
         }
     }
 }
+let dstTravelledTimeouts = [];
 class DistanceSystem {
     constructor(maxDst, dstIncrement, scrollingBGDiv) {
         this.maxDst = maxDst;
@@ -185,13 +318,24 @@ class DistanceSystem {
     }
     Pause() {
         this.dstIncrement = 0;
-        root.style.setProperty('--run-speed', '0ms');
+        this.SetSpeed(0);
         this.dstTraveledTimeouts.forEach(t => clearTimeout(t));
     }
     Start() {
         this.dstIncrement = this.defaultDstIncrement;
-        root.style.setProperty('--run-speed', '3500ms');
+        this.SetSpeed(5500);
         this.UpdateDistanceTraveled();
+    }
+    Restart() {
+        this.dstIncrement = this.defaultDstIncrement;
+        this.percentageTraveled = 0;
+        this.distanceTraveled = 0;
+        this.SetSpeed(5500);
+        this.UpdateDistanceTraveled();
+    }
+
+    SetSpeed(ms) {
+        root.style.setProperty('--run-speed', `${ms}ms`);
     }
 
     UpdateDistanceTraveled() {
@@ -205,34 +349,18 @@ class DistanceSystem {
             }
             else {
                 this.Pause();
-                game.style.position = 'relative';
-                player.style.top = '54.5vh';
-                player.style.left = '50%';
-                if (!this.dstReached) {
-                    player.animate(playerLeaveAnimation(), playerLeaveTiming);
-                }
-                this.dstReached = true;
             }
         }, 10, this.dstTraveledTimeouts);
     }
 }
 
-const FPS = 60;
-const velocityX = 1.5;
-const maxDst = 100;
-const dstIncrement = 0.1;
-
-const collisionSystem   = new CollisionSystem();
-const animEventSystem   = new AnimationEventSystem();
-const collectibleSystem = new CollectibleSystem();
-const inputSystem       = new InputSystem();
-const distanceSystem    = new DistanceSystem(maxDst, dstIncrement);
-
-let distanceTravelled = 0;
-
-const initCollisionHandlers = () => {
-    collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));   
+let interactables = [];
+const initInteractables = () => {
+    interactables.push(new CoinInteractable());
+    interactables.push(new BigCoinInteractable());
+    interactables.push(new SpikeTrapInteractable());
 }
+const initCollisionHandlers = () => collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
 const initAnimEvents = () => {
     animEventSystem.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
         player.classList.remove('player-jump-animation');
@@ -265,22 +393,184 @@ const initInputs = () => {
             player.style.left = `${left - velocityX}px`;
         }
     });
+    inputSystem.AddKeyHandler('h', () => {
+        playerHearts += 1;
+    });
+
 }
 
-const lerp = (v0, v1, t) => v0 * (1 - t) + v1 * t;
+const setPlayerScore = (score) => {
+    playerScore = clamp(score, 0, 9999);
+    playerScoreDiv.innerHTML = playerScore;
+}
+const modPlayerScore = (score) => {
+    playerScore = clamp(playerScore + score, 0, 9999);
+    playerScoreDiv.innerHTML = playerScore;
+}
 
-let dstTravelledTimeouts = [];
+const updatePlayerHeartsDisplay = () => {
+    let heartsDisplayedCount = document.querySelectorAll('.hearts ul li').length;
+    if (heartsDisplayedCount !== playerHearts) {
+        playerHeartsDiv.innerHTML = playerHeartsTemplate(playerHearts);
+    }
+}
 
-window.onload = () => {
+const checkPlayerWon = () => {
+    if (distanceSystem.percentageTraveled >= 1 && playerHearts > 0) {
+        currentState = GameState.WIN;
+    }
+}
+const checkPlayerLost = () => {
+    if (distanceSystem.percentageTraveled < 1 && playerHearts === 0) {
+        currentState = GameState.LOSE;
+    }
+}
+
+const onPlayerWon = () => {
+    if (currentState === GameState.WIN) {
+        inputSystem.DisableKeys();
+        distanceSystem.Pause();
+        
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+        player.classList.add('player-won');
+
+        clearInterval(i);
+
+        game.append(generateHTML(endCardTemplate(GameState.WIN, playerScore)));
+    }
+}
+const onPlayerLost = () => {
+    if (currentState === GameState.LOSE) {
+        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
+        inputSystem.DisableKeys();
+        distanceSystem.Pause();
+        modPlayerScore(0);
+
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+        player.classList.add('player-won');
+
+        clearInterval(i);
+
+        game.append(generateHTML(endCardTemplate(GameState.LOSE, playerScore)));
+    }
+}
+
+const startNextLevel = (element) => {
+    currentState = GameState.PLAYING;
+
+    playerHearts = 3;
+    setPlayerScore(0);
+    player.style.left = '13vw';
+
+    distanceSystem.Restart();
+    let endCard = element.parentNode.parentNode;
+    endCard.remove();
+
+    let activeColliders = document.querySelectorAll('.collider');
+    for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].classList.contains('player'))
+            continue;
+        activeColliders[i].remove();
+    }
+
+    generateLoopCallback(() => {
+        update();
+    }, FPS / 1000);
+}
+
+const resetPlayerProperties = () => {
+    if (player.classList.contains('player-won')) player.classList.remove('player-won');
+    if (player.classList.contains('player-lost')) player.classList.remove('player-lost'); // In case I add a player-lost css property.
+    if (player.classList.contains('player-jumping')) player.classList.remove('player-jumping');
+    if (player.classList.contains('player-jumping-animation')) player.classList.remove('player-jumping');
+
+    if (!player.classList.contains('player-running')) player.classList.add('player-running');
+}
+const resetPlayer = () => {
+    resetPlayerProperties();
+
+    playerHearts = 3;
+    setPlayerScore(0);
+    player.style.left = '13vw';
+}
+const restartGame = (element) => {
+    currentState = GameState.PLAYING;
+
+    resetPlayer();
+
+    distanceSystem.Restart();
+
+    let endCard = element.parentNode.parentNode;
+    endCard.remove();
+
+    let activeColliders = document.querySelectorAll('.collider');
+    for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].classList.contains('player'))
+            continue;
+        activeColliders[i].remove();
+    }
+
+    generateLoopCallback(() => {
+        update();
+    }, FPS / 1000);
+}
+
+const decrementPlayerHearts = () => {
+    playerHearts = clamp(playerHearts - 1, 0, 3);
+}
+
+const collisionSystem = new CollisionSystem();
+const animEventSystem = new AnimationEventSystem();
+const inputSystem     = new InputSystem();
+const distanceSystem  = new DistanceSystem(maxDst, dstIncrement);
+
+let spawningTicks = 0;
+const update = () => {
+    switch (currentState) {
+        case GameState.WIN:
+            clearInterval(i);
+            onPlayerWon();
+            break;
+        case GameState.LOSE:
+            clearInterval(i);
+            onPlayerLost();
+            break;
+        case GameState.PLAYING:
+            if (spawningTicks === 1000) {
+                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
+                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
+
+                game.append(interactable);
+                spawningTicks = 0;
+            } else {
+                spawningTicks++;
+            }
+            inputSystem.HandleKeys();
+                
+            collisionSystem.HandleCollision();
+            updatePlayerHeartsDisplay();
+
+            checkPlayerWon();
+            checkPlayerLost();
+            break;
+    }
+}
+
+const init = () => {
+    initInteractables();
     initCollisionHandlers();
     initAnimEvents();
     initInputs();
 
-    inputSystem.HandleKeys();
-
     generateLoopCallback(() => {
-        collisionSystem.HandleCollision();
+        update();
     }, FPS / 1000);
     distanceSystem.Start();
+}
+
+window.onload = () => {
+    init();
 }
 
