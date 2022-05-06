@@ -304,7 +304,7 @@ body {
 .end-card button {
     cursor: pointer;
 
-    margin-top: 0.8rem;
+    margin-top: 8.5rem;
     background: none;
     border: 1px solid white;
     padding: 1rem;
@@ -326,4 +326,13 @@ body {
 
     width: 24px;
     height: 24px;
+}
+.controls {
+    position: absolute;
+
+    left: 50%;
+    transform: translate(-50%);
+}
+.controls * {
+    text-align: center;
 }

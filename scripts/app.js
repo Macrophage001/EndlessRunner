@@ -5,7 +5,8 @@ const game             = document.querySelector('.game');
 const player           = document.querySelector('.player');
 const playerScoreDiv   = document.querySelector('.score h2');
 const playerHeartsDiv  = document.querySelector('.hearts ul');
-const colliders        = document.getElementsByClassName('collider');
+
+const colliders = document.getElementsByClassName('collider');
 const spawnArea        = document.querySelector('.spawn-area');
 const endCard          = document.querySelector('.end-card');
 
@@ -445,6 +446,7 @@ const initAnimEvents = () => {
     animEventSystem.HandleAnimationEvents();
 }
 const initInputs = () => {
+    // ' ' = Spacebar 
     inputSystem.AddKeyHandler(' ', () => {
         if (!player.classList.contains('player-jump-animation')) {
             player.classList.add('player-jump-animation');
@@ -484,7 +486,7 @@ const modPlayerScore = (score) => {
 }
 
 const updatePlayerHeartsDisplay = () => {
-    let heartsDisplayedCount = document.querySelectorAll('.hearts ul li').length;
+    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
     if (heartsDisplayedCount !== playerHearts) {
         playerHeartsDiv.innerHTML = playerHeartsTemplate(playerHearts);
     }
@@ -558,10 +560,10 @@ const startNextLevel = (element) => {
 }
 
 const resetPlayerProperties = () => {
-    if (player.classList.contains('player-won')) player.classList.remove('player-won');
-    if (player.classList.contains('player-lost')) player.classList.remove('player-lost'); // In case I add a player-lost css property.
-    if (player.classList.contains('player-jumping')) player.classList.remove('player-jumping');
-    if (player.classList.contains('player-jumping-animation')) player.classList.remove('player-jumping');
+    player.classList.remove('player-won');
+    player.classList.remove('player-lost'); // In case I add a player-lost css property.
+    player.classList.remove('player-jumping');
+    player.classList.remove('player-jumping-animation');
 
     if (!player.classList.contains('player-running')) player.classList.add('player-running');
 }
@@ -573,8 +575,6 @@ const resetPlayer = () => {
     player.style.left = '13vw';
 }
 const restartGame = (element) => {
-    currentState = GameState.PLAYING;
-
     resetPlayer();
 
     distanceSystem.Restart();
@@ -592,6 +592,8 @@ const restartGame = (element) => {
     generateLoopCallback(() => {
         update();
     }, FPS / 1000);
+
+    currentState = GameState.PLAYING;
 }
 
 const decrementPlayerHearts = () => {
