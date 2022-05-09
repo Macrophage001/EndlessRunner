@@ -1,4 +1,4 @@
-import { lerp, generateLoopCallback } from './utils.js';
+import { MathEX, Generators } from './utils.js';
 
 class DistanceSystem {
     constructor(maxDst, dstIncrement, element, progressBarThumb, progressBarTrail) {
@@ -40,11 +40,11 @@ class DistanceSystem {
     }
 
     StartDistanceTracker() {
-        generateLoopCallback(() => {
+        Generators.generateLoopCallback(() => {
             this.distanceTraveled += this.dstIncrement;
             this.percentageTraveled = (this.distanceTraveled / this.maxDst);
             if (this.percentageTraveled < 1) {
-                let thumbPositionX = lerp(-1, 23, this.percentageTraveled);
+                let thumbPositionX = MathEX.lerp(-1, 23, this.percentageTraveled);
                 this.progressBarThumb.style.left = `${thumbPositionX}vw`;
                 this.progressBarTrail.style.width = `${this.percentageTraveled * 100}%`;
             }
@@ -55,4 +55,4 @@ class DistanceSystem {
     }
 }
 
-export { DistanceSystem };
+export default DistanceSystem;

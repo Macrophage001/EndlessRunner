@@ -1,6 +1,8 @@
-import { CollisionSystem } from "./collisionSystem.js";
-import { DistanceSystem } from "./distanceSystem.js";
-import { clamp, generateLoopCallback, generateHTML } from "./utils.js";
+import CollisionSystem from "./collisionSystem.js";
+import DistanceSystem from "./distanceSystem.js";
+import InputSystem from "./inputSystem.js";
+
+import { MathEX, Generators, findRootParent } from "./utils.js";
 
 const root             = document.querySelector(':root');
 
@@ -112,17 +114,26 @@ const interactablePatternTemplates = [
     `
 ]
 
+// GAME STATES:
+class GameState {
+    static WIN     = Symbol('WIN');
+    static LOSE    = Symbol('LOSE');
+    static PLAYING = Symbol('PLAYING');
+}
+
+let currentState = GameState.PLAYING;
+
 let mainIntervals = [];
 
-const playerHeartsTemplate = (heartsCount) => {
+const playerHeartsGenerator = (heartsCount) => {
     let heartElements = '';
     for (let i = 0; i < heartsCount; i++) {
         heartElements += '<li>&hearts;</li>';
     }
-    return `${heartElements}`
+    return heartElements;
 }
-const endCardTemplate = (state, points) => {
-    let endCardDiv = generateHTML(`
+const endMenuGenerator = (state) => {
+    let endCardDiv = Generators.generateHTML(`
         <div class="end-card end-card-animation">
             <h2>
                 ${
@@ -131,12 +142,12 @@ const endCardTemplate = (state, points) => {
                     : 'You Lose!'
                 }
             </h2>
-            <div class="end-score"><div class="coin-icon"></div><h2>${points}</h2></div>
+            <div class="end-score"><div class="coin-icon"></div><h2>${playerScore}</h2></div>
             <div class="controls">
                 ${
                     state === GameState.WIN
-                    ? generateHTML('<button id="next-level-btn"><h2>Next Level</h2></button>').outerHTML
-                    : generateHTML('<button id="restart-btn"><h2>Restart</h2></button>').outerHTML
+                    ? Generators.generateHTML('<button id="next-level-btn"><h2>Next Level</h2></button>').outerHTML
+                    : Generators.generateHTML('<button id="restart-btn"><h2>Restart</h2></button>').outerHTML
                 }
             </div>
         </div>
@@ -144,14 +155,12 @@ const endCardTemplate = (state, points) => {
 
     let nextLevelBtn = endCardDiv.querySelector('#next-level-btn');
     if (nextLevelBtn !== null) {
-        nextLevelBtn.addEventListener('click', () => startNextLevel(nextLevelBtn));
-        console.log(nextLevelBtn);
+        nextLevelBtn.addEventListener('click', startNextLevel);
     }
 
     let restartBtn = endCardDiv.querySelector('#restart-btn');
     if (restartBtn !== null) {
-        restartBtn.addEventListener('click', () => restartGame(restartBtn));
-        console.log(restartBtn);
+        restartBtn.addEventListener('click', restartGame);
     }
 
     return endCardDiv;
@@ -167,39 +176,33 @@ let maxObstacleSpawnChance = 0.80;
 
 let obstacleSpawnChance = minObstacleSpawnChance;
 
-let currentLevel = 1;
+let currentLevel = 0;
 let playerScore  = 0;
 let playerHearts = 3;
 
-const levelMaps = {
-    1:  {maxDst: 100, minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
-    2:  {maxDst: 125, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
-    3:  {maxDst: 150, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
-    4:  {maxDst: 175, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
-    5:  {maxDst: 200, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
-    6:  {maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    7:  {maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    8:  {maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    9:  {maxDst: 300, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    10: {maxDst: 325, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
-}
-
-// GAME STATES:
-class GameState {
-    static WIN     = Symbol('WIN');
-    static LOSE    = Symbol('LOSE');
-    static PLAYING = Symbol('PLAYING');
-}
-
-let currentState = GameState.PLAYING;
+const levelMaps = [
+    {maxDst: 100, minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 125, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 150, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 175, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 200, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 300, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 325, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
+]
 
 class CollisionHandler {
     constructor(element) {
         this.element = element;
     }
+    Handle(interactables, collider) {
+        console.warn('Should not be using the base class "Handle" function');
+    }
 }
 class PlayerCollisionHandler extends CollisionHandler {
-    Handle(collider) {
+    Handle(interactables, collider) {
         interactables.forEach(i => {
             if (i.className === collider.classList[0]) {
                 i.OnCollect();
@@ -245,52 +248,7 @@ class HeartInteractable extends InteractableSystem {
         super('heart');
     }
     OnCollect() {
-        playerHearts = clamp(playerHearts + 1, 0, 3);
-    }
-}
-
-let inputIntervals = {};
-class InputSystem {
-    constructor() {
-        this.keyHandlers = {};
-    }
-
-    AddKeyHandler(key, onKeyDown, onKeyUp) {
-        if (this.keyHandlers[key] !== undefined) {
-            this.keyHandlers[key].push(onKeyDown);
-            this.keyHandlers[key].keyDown.push(onKeyDown);
-            this.keyHandlers[key].keyUp.push(onKeyUp);
-        } else {
-            this.keyHandlers[key] = { keyDown: [onKeyDown], keyUp: [onKeyUp] };
-        }
-    }
-
-    HandleKeys() {
-        document.onkeydown = (e) => {
-            e.preventDefault();
-            if (inputIntervals[e.key] === undefined) {
-                inputIntervals[e.key] = setInterval(() => {
-                    this.keyHandlers[e.key].keyDown.forEach(cb => cb());
-                });
-            }
-        }
-
-        document.onkeyup = (e) => {
-            e.preventDefault();
-            if (inputIntervals[e.key] !== undefined) {
-                for (const prop in inputIntervals) {
-                    if (prop === e.key) {
-                        clearInterval(inputIntervals[prop]);
-                        inputIntervals[e.key] = undefined;
-                        this.keyHandlers[e.key].keyUp.forEach(cb => { if (typeof cb === 'function') cb() });
-                    }
-                }
-            }
-        }
-    }
-    DisableKeys() {
-        document.onkeydown = null;
-        document.onkeyup   = null;
+        playerHearts = MathEX.clamp(playerHearts + 1, 0, 3);
     }
 }
 class AnimationEventSystem {
@@ -361,15 +319,15 @@ const initInputs = () => {
 
 }
 const initLoops = () => {
-    generateLoopCallback(() => {
+    Generators.generateLoopCallback(() => {
         update();
     }, 1000 / FPS, mainIntervals);
-    generateLoopCallback(() => {
+    Generators.generateLoopCallback(() => {
         if (currentState === GameState.PLAYING) {
             let spawnChance = Math.random();
             if (spawnChance <= obstacleSpawnChance) {
                 let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
-                let interactable = generateHTML(interactablePatternTemplates[randomIndex]);
+                let interactable = Generators.generateHTML(interactablePatternTemplates[randomIndex]);
 
                 generatedInteractables.push(interactable);
 
@@ -377,17 +335,17 @@ const initLoops = () => {
             }
         }
     }, 2000, mainIntervals);
-    generateLoopCallback(() => {
-        obstacleSpawnChance = clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
+    Generators.generateLoopCallback(() => {
+        obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
 }
 
 const setPlayerScore = (score) => {
-    playerScore = clamp(score, 0, 9999);
+    playerScore = MathEX.clamp(score, 0, 9999);
     playerScoreDiv.innerHTML = playerScore;
 }
 const modPlayerScore = (score) => {
-    playerScore = clamp(playerScore + score, 0, 9999);
+    playerScore = MathEX.clamp(playerScore + score, 0, 9999);
     playerScoreDiv.innerHTML = playerScore;
 }
 
@@ -402,8 +360,10 @@ const checkPlayerLost = () => {
     }
 }
 
-const startNextLevel = (element) => {
+const startNextLevel = () => {
     currentLevel++;
+    if (currentLevel > levelMaps.length - 1)
+        currentLevel = levelMaps.length - 1;
 
     minObstacleSpawnChance = levelMaps[currentLevel].minObstacleSpawnChance;
     maxObstacleSpawnChance = levelMaps[currentLevel].maxObstacleSpawnChance;
@@ -413,8 +373,7 @@ const startNextLevel = (element) => {
 
     distanceSystem.Restart(levelMaps[currentLevel]);
 
-    let endCard = element.parentNode.parentNode;
-    endCard.remove();
+    document.querySelector('.end-card').remove();
 
     let activeColliders = document.querySelectorAll('.collider');
     for (let i = 0; i < activeColliders.length; i++) {
@@ -427,7 +386,6 @@ const startNextLevel = (element) => {
 
     currentState = GameState.PLAYING;
 }
-window.startNextLevel = startNextLevel;
 
 const resetGeneratedInteractables = () => {
     generatedInteractables.forEach(i => i.remove());
@@ -447,14 +405,14 @@ const resetPlayer = () => {
     setPlayerScore(0);
     player.style.left = '13vw';
 }
-const restartGame = (element) => {
+
+const restartGame = () => {
     resetPlayer();
     resetGeneratedInteractables();
 
     distanceSystem.Restart(levelMaps[currentLevel]);
 
-    let endCard = element.parentNode.parentNode;
-    endCard.remove();
+    document.querySelector('.end-card').remove();
 
     let activeColliders = document.querySelectorAll('.collider');
     for (let i = 0; i < activeColliders.length; i++) {
@@ -467,11 +425,6 @@ const restartGame = (element) => {
 
     currentState = GameState.PLAYING;
 }
-window.restartGame = restartGame;
-
-const decreasePlayerHearts = () => {
-    playerHearts = clamp(playerHearts - 1, 0, 3);
-}
 
 const onPlayerWon = () => {
     if (currentState === GameState.WIN) {
@@ -483,10 +436,9 @@ const onPlayerWon = () => {
         player.classList.remove('player-running');
         player.classList.add('player-won');
 
-        // clearInterval(i);
         mainIntervals.forEach(i => clearInterval(i));
 
-        game.append(endCardTemplate(GameState.WIN, playerScore));
+        game.append(endMenuGenerator(GameState.WIN));
     }
 }
 const onPlayerLost = () => {
@@ -502,17 +454,9 @@ const onPlayerLost = () => {
 
         player.classList.add('player-won');
 
-        // clearInterval(i);
         mainIntervals.forEach(i => clearInterval(i));
 
-        game.append(endCardTemplate(GameState.LOSE, playerScore));
-    }
-}
-
-const updatePlayerHeartsDisplay = () => {
-    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
-    if (heartsDisplayedCount !== playerHearts) {
-        playerHeartsDiv.innerHTML = playerHeartsTemplate(playerHearts);
+        game.append(endMenuGenerator(GameState.LOSE));
     }
 }
 
@@ -521,23 +465,29 @@ const animEventSystem = new AnimationEventSystem();
 const inputSystem     = new InputSystem();
 const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
 
-let spawningTicks = 0;
+const updatePlayerHeartsDisplay = () => {
+    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
+    if (heartsDisplayedCount !== playerHearts) {
+        playerHeartsDiv.innerHTML = playerHeartsGenerator(playerHearts);
+    }
+}
+
+const decreasePlayerHearts = () => playerHearts = MathEX.clamp(playerHearts - 1, 0, 3);
+
 const update = () => {
     switch (currentState) {
         case GameState.WIN:
-            // clearInterval(i);
             mainIntervals.forEach(i => clearInterval(i));
             onPlayerWon();
             break;
         case GameState.LOSE:
-            // clearInterval(i);
             mainIntervals.forEach(i => clearInterval(i));
             onPlayerLost();
             break;
         case GameState.PLAYING:
             inputSystem.HandleKeys();
                 
-            collisionSystem.HandleCollision();
+            collisionSystem.HandleCollision(interactables);
             updatePlayerHeartsDisplay();
 
             checkPlayerWon();
@@ -563,4 +513,3 @@ const init = () => {
 window.onload = () => {
     init();
 }
-

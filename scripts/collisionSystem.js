@@ -19,16 +19,16 @@ class CollisionSystem {
         return inHorizontalBounds && inVerticalBounds;
     }
 
-    HandleCollision() {
+    HandleCollision(interactables) {
         this.collisionHandlers.forEach(handler => {
             for (let i = 0; i < this.colliders.length; i++) {
                 let collider = this.colliders[i];
                 if (this.Overlap(handler.element, collider)) {
-                    handler.Handle(collider);
+                    handler.Handle(interactables, collider);
                 }
             }
         });
     }
 }
 
-export { CollisionSystem };
+export default CollisionSystem;
