@@ -1,8 +1,9 @@
 import CollisionSystem from "./collisionSystem.js";
 import DistanceSystem from "./distanceSystem.js";
 import InputSystem from "./inputSystem.js";
+import AnimationEventSystem from "./animationEventSystem.js";
 
-import { MathEX, Generators, findRootParent } from "./utils.js";
+import { MathEX, Generators } from "./utils.js";
 
 const root             = document.querySelector(':root');
 
@@ -251,24 +252,179 @@ class HeartInteractable extends InteractableSystem {
         playerHearts = MathEX.clamp(playerHearts + 1, 0, 3);
     }
 }
-class AnimationEventSystem {
-    constructor() {
-        this.animationEventHandlers = [];
+// class AnimationEventSystem {
+//     constructor() {
+//         this.animationEventHandlers = [];
+//     }
+
+//     AddAnimationEventHandler(element, animationName, eventType, callBack) {
+//         this.animationEventHandlers.push({ element, animationName, eventType, callBack });
+//     }
+
+//     HandleAnimationEvents() {
+//         for (let i = 0; i < this.animationEventHandlers.length; i++) {
+//             let evHandler = this.animationEventHandlers[i];
+//             document.addEventListener(evHandler.eventType, () => {
+//                 if (evHandler.element.classList.contains(evHandler.animationName)) {
+//                     evHandler.callBack()
+//                 }
+//             });
+//         }
+//     }
+// }
+
+const setPlayerScore = (score) => {
+    playerScore = MathEX.clamp(score, 0, 9999);
+    playerScoreDiv.innerHTML = playerScore;
+}
+const modPlayerScore = (score) => {
+    playerScore = MathEX.clamp(playerScore + score, 0, 9999);
+    playerScoreDiv.innerHTML = playerScore;
+}
+
+const checkPlayerWon = () => {
+    if (distanceSystem.percentageTraveled >= 1 && playerHearts > 0) {
+        currentState = GameState.WIN;
+    }
+}
+const checkPlayerLost = () => {
+    if (distanceSystem.percentageTraveled < 1 && playerHearts === 0) {
+        currentState = GameState.LOSE;
+    }
+}
+
+const startNextLevel = () => {
+    currentLevel++;
+    if (currentLevel > levelMaps.length - 1)
+        currentLevel = levelMaps.length - 1;
+
+    minObstacleSpawnChance = levelMaps[currentLevel].minObstacleSpawnChance;
+    maxObstacleSpawnChance = levelMaps[currentLevel].maxObstacleSpawnChance;
+
+    resetPlayer();
+    resetGeneratedInteractables();
+
+    distanceSystem.Restart(levelMaps[currentLevel]);
+
+    document.querySelector('.end-card').remove();
+
+    let activeColliders = document.querySelectorAll('.collider');
+    for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].classList.contains('player'))
+            continue;
+        activeColliders[i].remove();
     }
 
-    AddAnimationEventHandler(element, animationName, eventType, callBack) {
-        this.animationEventHandlers.push({ element, animationName, eventType, callBack });
+    initLoops();
+
+    currentState = GameState.PLAYING;
+}
+
+const resetGeneratedInteractables = () => generatedInteractables.forEach(i => i.remove());
+const resetPlayerProperties = () => {
+    player.classList.remove('player-won');
+    player.classList.remove('player-lost'); // In case I add a player-lost css property.
+    player.classList.remove('player-jumping');
+    player.classList.remove('player-jumping-animation');
+
+    if (!player.classList.contains('player-running')) player.classList.add('player-running');
+}
+const resetPlayer = () => {
+    resetPlayerProperties();
+
+    playerHearts = 3;
+    setPlayerScore(0);
+    player.style.left = '13vw';
+}
+const restartGame = () => {
+    resetPlayer();
+    resetGeneratedInteractables();
+
+    distanceSystem.Restart(levelMaps[currentLevel]);
+
+    document.querySelector('.end-card').remove();
+
+    let activeColliders = document.querySelectorAll('.collider');
+    for (let i = 0; i < activeColliders.length; i++) {
+        if (activeColliders[i].classList.contains('player'))
+            continue;
+        activeColliders[i].remove();
     }
 
-    HandleAnimationEvents() {
-        for (let i = 0; i < this.animationEventHandlers.length; i++) {
-            let evHandler = this.animationEventHandlers[i];
-            document.addEventListener(evHandler.eventType, () => {
-                if (evHandler.element.classList.contains(evHandler.animationName)) {
-                    evHandler.callBack()
-                }
-            });
-        }
+    initLoops();
+
+    currentState = GameState.PLAYING;
+}
+
+const onPlayerWon = () => {
+    if (currentState === GameState.WIN) {
+        inputSystem.DisableKeys();
+        distanceSystem.Pause(root);
+        
+        player.classList.remove('player-jump-animation');
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+        player.classList.add('player-won');
+
+        mainIntervals.forEach(i => clearInterval(i));
+
+        game.append(endMenuGenerator(GameState.WIN));
+    }
+}
+const onPlayerLost = () => {
+    if (currentState === GameState.LOSE) {
+        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
+        inputSystem.DisableKeys();
+        distanceSystem.Pause(root);
+        modPlayerScore(0);
+
+        player.classList.remove('player-jump-animation');
+        player.classList.remove('player-jumping');
+        player.classList.remove('player-running');
+
+        player.classList.add('player-won');
+
+        mainIntervals.forEach(i => clearInterval(i));
+
+        game.append(endMenuGenerator(GameState.LOSE));
+    }
+}
+
+const collisionSystem = new CollisionSystem();
+const animEventSystem = new AnimationEventSystem();
+const inputSystem     = new InputSystem();
+const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
+
+const decreasePlayerHearts = () => playerHearts = MathEX.clamp(playerHearts - 1, 0, 3);
+
+const updatePlayerHeartsDisplay = () => {
+    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
+    if (heartsDisplayedCount !== playerHearts) {
+        playerHeartsDiv.innerHTML = playerHeartsGenerator(playerHearts);
+    }
+}
+const update = () => {
+    switch (currentState) {
+        case GameState.WIN:
+            mainIntervals.forEach(i => clearInterval(i));
+            onPlayerWon();
+            break;
+        case GameState.LOSE:
+            mainIntervals.forEach(i => clearInterval(i));
+            onPlayerLost();
+            break;
+        case GameState.PLAYING:
+            inputSystem.HandleKeys();
+                
+            collisionSystem.HandleCollision(interactables);
+            updatePlayerHeartsDisplay();
+
+            checkPlayerWon();
+            checkPlayerLost();
+            break;
+        default:
+            console.error('Invalid State!', currentState);
+            break;
     }
 }
 
@@ -338,165 +494,6 @@ const initLoops = () => {
     Generators.generateLoopCallback(() => {
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
-}
-
-const setPlayerScore = (score) => {
-    playerScore = MathEX.clamp(score, 0, 9999);
-    playerScoreDiv.innerHTML = playerScore;
-}
-const modPlayerScore = (score) => {
-    playerScore = MathEX.clamp(playerScore + score, 0, 9999);
-    playerScoreDiv.innerHTML = playerScore;
-}
-
-const checkPlayerWon = () => {
-    if (distanceSystem.percentageTraveled >= 1 && playerHearts > 0) {
-        currentState = GameState.WIN;
-    }
-}
-const checkPlayerLost = () => {
-    if (distanceSystem.percentageTraveled < 1 && playerHearts === 0) {
-        currentState = GameState.LOSE;
-    }
-}
-
-const startNextLevel = () => {
-    currentLevel++;
-    if (currentLevel > levelMaps.length - 1)
-        currentLevel = levelMaps.length - 1;
-
-    minObstacleSpawnChance = levelMaps[currentLevel].minObstacleSpawnChance;
-    maxObstacleSpawnChance = levelMaps[currentLevel].maxObstacleSpawnChance;
-
-    resetPlayer();
-    resetGeneratedInteractables();
-
-    distanceSystem.Restart(levelMaps[currentLevel]);
-
-    document.querySelector('.end-card').remove();
-
-    let activeColliders = document.querySelectorAll('.collider');
-    for (let i = 0; i < activeColliders.length; i++) {
-        if (activeColliders[i].classList.contains('player'))
-            continue;
-        activeColliders[i].remove();
-    }
-
-    initLoops();
-
-    currentState = GameState.PLAYING;
-}
-
-const resetGeneratedInteractables = () => {
-    generatedInteractables.forEach(i => i.remove());
-}
-const resetPlayerProperties = () => {
-    player.classList.remove('player-won');
-    player.classList.remove('player-lost'); // In case I add a player-lost css property.
-    player.classList.remove('player-jumping');
-    player.classList.remove('player-jumping-animation');
-
-    if (!player.classList.contains('player-running')) player.classList.add('player-running');
-}
-const resetPlayer = () => {
-    resetPlayerProperties();
-
-    playerHearts = 3;
-    setPlayerScore(0);
-    player.style.left = '13vw';
-}
-
-const restartGame = () => {
-    resetPlayer();
-    resetGeneratedInteractables();
-
-    distanceSystem.Restart(levelMaps[currentLevel]);
-
-    document.querySelector('.end-card').remove();
-
-    let activeColliders = document.querySelectorAll('.collider');
-    for (let i = 0; i < activeColliders.length; i++) {
-        if (activeColliders[i].classList.contains('player'))
-            continue;
-        activeColliders[i].remove();
-    }
-
-    initLoops();
-
-    currentState = GameState.PLAYING;
-}
-
-const onPlayerWon = () => {
-    if (currentState === GameState.WIN) {
-        inputSystem.DisableKeys();
-        distanceSystem.Pause(root);
-        
-        player.classList.remove('player-jump-animation');
-        player.classList.remove('player-jumping');
-        player.classList.remove('player-running');
-        player.classList.add('player-won');
-
-        mainIntervals.forEach(i => clearInterval(i));
-
-        game.append(endMenuGenerator(GameState.WIN));
-    }
-}
-const onPlayerLost = () => {
-    if (currentState === GameState.LOSE) {
-        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
-        inputSystem.DisableKeys();
-        distanceSystem.Pause(root);
-        modPlayerScore(0);
-
-        player.classList.remove('player-jump-animation');
-        player.classList.remove('player-jumping');
-        player.classList.remove('player-running');
-
-        player.classList.add('player-won');
-
-        mainIntervals.forEach(i => clearInterval(i));
-
-        game.append(endMenuGenerator(GameState.LOSE));
-    }
-}
-
-const collisionSystem = new CollisionSystem();
-const animEventSystem = new AnimationEventSystem();
-const inputSystem     = new InputSystem();
-const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
-
-const updatePlayerHeartsDisplay = () => {
-    let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
-    if (heartsDisplayedCount !== playerHearts) {
-        playerHeartsDiv.innerHTML = playerHeartsGenerator(playerHearts);
-    }
-}
-
-const decreasePlayerHearts = () => playerHearts = MathEX.clamp(playerHearts - 1, 0, 3);
-
-const update = () => {
-    switch (currentState) {
-        case GameState.WIN:
-            mainIntervals.forEach(i => clearInterval(i));
-            onPlayerWon();
-            break;
-        case GameState.LOSE:
-            mainIntervals.forEach(i => clearInterval(i));
-            onPlayerLost();
-            break;
-        case GameState.PLAYING:
-            inputSystem.HandleKeys();
-                
-            collisionSystem.HandleCollision(interactables);
-            updatePlayerHeartsDisplay();
-
-            checkPlayerWon();
-            checkPlayerLost();
-            break;
-        default:
-            console.error('Invalid State!', currentState);
-            break;
-    }
 }
 
 let generatedInteractables = [];

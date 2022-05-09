@@ -1,3 +1,5 @@
+import { MathEX } from "./utils.js";
+
 class CollisionSystem {
     constructor() {
         this.collisionHandlers = [];
@@ -10,8 +12,8 @@ class CollisionSystem {
 
     // Source: https://stackoverflow.com/questions/9768291/check-collision-between-certain-divs
     Overlap(colA, colB) {
-        const rectA = colA.getBoundingClientRect();
-        const rectB = colB.getBoundingClientRect();
+        const rectA = MathEX.rect(colA);
+        const rectB = MathEX.rect(colB);
 
         const inHorizontalBounds = rectA.x < rectB.x + rectB.width && rectA.x + rectA.width > rectB.x;
         const inVerticalBounds = rectA.y < rectB.y + rectB.height && rectA.y + rectA.height > rectB.y;

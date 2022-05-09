@@ -9,7 +9,7 @@ var MathEX = (function () {
     publicFunctions.mul   = (arr) => arr.reduce((state, value) => state * value);
     publicFunctions.avg   = (arr) => publicFunctions.sum(arr) / arr.length;
     
-    publicFunctions.position = (element) => ({
+    publicFunctions.rect = (element) => ({
         x: element.getBoundingClientRect().left,
         y: element.getBoundingClientRect().top,
         width: element.getBoundingClientRect().width,
