@@ -1,8 +1,8 @@
 import { MathEX, Generators } from './utils.js';
 
 class DistanceSystem {
-    constructor(maxDst, dstIncrement, element, progressBarThumb, progressBarTrail) {
-        this.maxDst = maxDst;
+    constructor(dstIncrement, element, progressBarThumb, progressBarTrail) {
+        this.maxDst = 100;
         this.defaultDstIncrement = this.dstIncrement = dstIncrement;
         this.distanceTraveled = 0;
         this.percentageTraveled = 0;

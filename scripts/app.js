@@ -169,13 +169,13 @@ const endMenuGenerator = (state) => {
 
 const FPS = 60;
 const velocityX = 1.5;
-const maxDst = 100;
+
 const dstIncrement = 0.02;
 
 const collisionSystem = new CollisionSystem();
 const animEventSystem = new AnimationEventSystem();
 const inputSystem     = new InputSystem();
-const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
+const distanceSystem  = new DistanceSystem(dstIncrement, root, progressBarThumb, progressBarTrail);
 
 let minObstacleSpawnChance = 0.50;
 let maxObstacleSpawnChance = 0.80;
@@ -187,16 +187,16 @@ let playerScore  = 0;
 let playerHearts = 3;
 
 const levelMaps = [
-    {maxDst: 90, minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 115, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 140, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 165, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 190, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 215, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 240, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 265, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 280, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 305, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
+    {maxDst: 50,  minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 75,  minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 100, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 125, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 150, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 175, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 200, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
 ]
 
 class CollisionHandler {
@@ -217,6 +217,7 @@ class PlayerCollisionHandler extends CollisionHandler {
         });
     }
 }
+
 class InteractableSystem {
     constructor(className) {
         this.className = className;
@@ -409,6 +410,7 @@ const initInteractables = () => {
     interactables.push(new SpikeTrapInteractable());
     interactables.push(new HeartInteractable());
 }
+
 const initCollisionHandlers = () => collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
 const initAnimEvents = () => {
     animEventSystem.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
@@ -443,10 +445,6 @@ const initInputs = () => {
             player.style.left = `${left - velocityX}px`;
         }
     });
-    inputSystem.AddKeyHandler('h', () => {
-        playerHearts += 1;
-    });
-
 }
 const initLoops = () => {
     Generators.generateLoopCallback(() => {
@@ -461,9 +459,6 @@ const initLoops = () => {
         }
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
-    // Generators.generateLoopCallback(() => {
-    //     obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
-    // }, 2000, mainIntervals);
 }
 
 const init = () => {
