@@ -172,6 +172,11 @@ const velocityX = 1.5;
 const maxDst = 100;
 const dstIncrement = 0.02;
 
+const collisionSystem = new CollisionSystem();
+const animEventSystem = new AnimationEventSystem();
+const inputSystem     = new InputSystem();
+const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
+
 let minObstacleSpawnChance = 0.50;
 let maxObstacleSpawnChance = 0.80;
 
@@ -252,26 +257,6 @@ class HeartInteractable extends InteractableSystem {
         playerHearts = MathEX.clamp(playerHearts + 1, 0, 3);
     }
 }
-// class AnimationEventSystem {
-//     constructor() {
-//         this.animationEventHandlers = [];
-//     }
-
-//     AddAnimationEventHandler(element, animationName, eventType, callBack) {
-//         this.animationEventHandlers.push({ element, animationName, eventType, callBack });
-//     }
-
-//     HandleAnimationEvents() {
-//         for (let i = 0; i < this.animationEventHandlers.length; i++) {
-//             let evHandler = this.animationEventHandlers[i];
-//             document.addEventListener(evHandler.eventType, () => {
-//                 if (evHandler.element.classList.contains(evHandler.animationName)) {
-//                     evHandler.callBack()
-//                 }
-//             });
-//         }
-//     }
-// }
 
 const setPlayerScore = (score) => {
     playerScore = MathEX.clamp(score, 0, 9999);
@@ -373,10 +358,8 @@ const onPlayerWon = () => {
 }
 const onPlayerLost = () => {
     if (currentState === GameState.LOSE) {
-        // TODO: Player lose state. Show the lost screen and ask the player if they'd like to restart.
         inputSystem.DisableKeys();
         distanceSystem.Pause(root);
-        modPlayerScore(0);
 
         player.classList.remove('player-jump-animation');
         player.classList.remove('player-jumping');
@@ -389,11 +372,6 @@ const onPlayerLost = () => {
         game.append(endMenuGenerator(GameState.LOSE));
     }
 }
-
-const collisionSystem = new CollisionSystem();
-const animEventSystem = new AnimationEventSystem();
-const inputSystem     = new InputSystem();
-const distanceSystem  = new DistanceSystem(maxDst, dstIncrement, root, progressBarThumb, progressBarTrail);
 
 const decreasePlayerHearts = () => playerHearts = MathEX.clamp(playerHearts - 1, 0, 3);
 

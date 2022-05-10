@@ -3,7 +3,7 @@ var MathEX = (function () {
 
     publicFunctions.lerp  = (v0, v1, t) => v0 * (1 - t) + v1 * t;
     publicFunctions.clamp = (v, min, max) => v < min ? v = min : v > max ? v = max : v;
-    publicFunctions.range = (min, max) => Math.random() * (max - min) + min;
+    publicFunctions.random = (min, max) => Math.random() * (max - min) + min;
 
     publicFunctions.sum   = (arr) => arr.reduce((state, value) => state + value);
     publicFunctions.mul   = (arr) => arr.reduce((state, value) => state * value);
@@ -20,20 +20,20 @@ var MathEX = (function () {
 
 var Generators = (function () {
     var publicFunctions = {};
+    const support = (function () {
+        if (!window.DOMParser) return false;
+        var parser = new DOMParser();
+        try {
+            parser.parseFromString('x', 'text/html');
+        } catch (err) {
+            console.trace(err);
+            return false;
+        }
+        return true;
+    })();
+    
     publicFunctions.generateHTML = (str) => {
         // Some older browsers don't support DOMParser, so check to make sure.
-        const support = (function () {
-            if (!window.DOMParser) return false;
-            var parser = new DOMParser();
-            try {
-                parser.parseFromString('x', 'text/html');
-            } catch (err) {
-                console.trace(err);
-                return false;
-            }
-            return true;
-        })();
-    
         if (support) {
             var parser = new DOMParser();
             var doc = parser.parseFromString(str, 'text/html');
