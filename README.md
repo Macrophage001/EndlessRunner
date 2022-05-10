@@ -15,7 +15,7 @@ The main goal is to reach the end of the level while avoiding the obstacles and 
 #### **Win State**
 
 The player reaches the end of the level.
-<img src="./images/sonicWon" alt="Win State Sonic" width="32px" height="32px" />
+![Win State Sonic](<img src="./images/sonicWon" alt="Win State Sonic" width="32px" height="32px" />)
 
 
 #### **Lose State**
