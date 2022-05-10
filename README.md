@@ -9,13 +9,16 @@ The main goal is to reach the end of the level while avoiding the obstacles and 
 
 ##### Collectibles
 
-- Coin: ![Coin](./images/coin.gif =32x32)
+- Coin: 
+
+![Coin](./images/coin.gif)
+
 - Hearts: '&hearts;'
 
 #### **Win State**
 
 The player reaches the end of the level.
-![Win State Sonic](<img src="./images/sonicWon" alt="Win State Sonic" width="32px" height="32px" />)
+![Win State Sonic](<img src="./images/sonicWon.gif" alt="Win State Sonic" width="32px" height="32px" />)
 
 
 #### **Lose State**
