@@ -117,9 +117,9 @@ const interactablePatternTemplates = [
 
 // GAME STATES:
 class GameState {
-    static WIN     = Symbol('WIN');
-    static LOSE    = Symbol('LOSE');
-    static PLAYING = Symbol('PLAYING');
+    static WIN     = 'WIN';
+    static LOSE    = 'LOSE';
+    static PLAYING = 'PLAYING';
 }
 
 let currentState = GameState.PLAYING;
@@ -187,16 +187,16 @@ let playerScore  = 0;
 let playerHearts = 3;
 
 const levelMaps = [
-    {maxDst: 100, minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 125, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 150, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 175, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 200, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 300, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 325, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
+    {maxDst: 90, minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 115, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 140, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 165, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 190, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
+    {maxDst: 215, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 240, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 265, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 280, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    {maxDst: 305, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
 ]
 
 class CollisionHandler {
@@ -256,6 +256,16 @@ class HeartInteractable extends InteractableSystem {
     OnCollect() {
         playerHearts = MathEX.clamp(playerHearts + 1, 0, 3);
     }
+}
+
+let generatedInteractables = [];
+const spawnInteractable = () => {
+    let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
+    let interactable = Generators.generateHTML(interactablePatternTemplates[randomIndex]);
+
+    generatedInteractables.push(interactable);
+
+    game.append(interactable);
 }
 
 const setPlayerScore = (score) => {
@@ -367,31 +377,6 @@ const updatePlayerHeartsDisplay = () => {
     }
 }
 
-let spawningTicks = 0;
-let generatedInteractables = [];
-const spawnInteractable = () => {
-    let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
-    let interactable = Generators.generateHTML(interactablePatternTemplates[randomIndex]);
-
-    generatedInteractables.push(interactable);
-
-    game.append(interactable);
-}
-const updateInteractableSpawning = () => {
-    if (spawningTicks >= 200) {
-        if (currentState === GameState.PLAYING) {
-            let spawnChance = Math.random();
-            if (spawnChance <= obstacleSpawnChance) {
-                spawnInteractable();
-            }
-        }
-
-        spawningTicks = 0;
-    } else {
-        spawningTicks++;
-    }
-    console.log(spawningTicks);
-}
 const update = () => {
     switch (currentState) {
         case GameState.WIN:
@@ -404,10 +389,9 @@ const update = () => {
             break;
         case GameState.PLAYING:
             inputSystem.HandleKeys();
-                
             collisionSystem.HandleCollision(interactables);
+
             updatePlayerHeartsDisplay();
-            updateInteractableSpawning();
 
             checkPlayerWon();
             checkPlayerLost();
@@ -468,6 +452,14 @@ const initLoops = () => {
     Generators.generateLoopCallback(() => {
         update();
     }, 1000 / FPS, mainIntervals);
+    Generators.generateLoopCallback(() => {
+        if (currentState === GameState.PLAYING) {
+            let spawnChance = Math.random();
+            if (spawnChance <= obstacleSpawnChance) {
+                spawnInteractable();
+            }
+        }
+    }, 2000, mainIntervals);
     Generators.generateLoopCallback(() => {
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
