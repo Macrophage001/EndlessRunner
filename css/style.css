@@ -20,21 +20,31 @@
 
 body {
     background-color: #f1f1f1;
-    display: flex;
 }
 
-.vacuum {
-    width: 13vw;
-    height: 65vh;
-    margin-top: 1rem;
-    background-color: #f1f1f1;
-    z-index: 1;
-}
 .game {
     width: 75vw;
     height: 65vh;
 
     margin: auto;
+    margin-top: 1rem;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+.interactables-layer {
+    /* background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)); */
+    position: absolute;
+
+    top: 0;
+
+    width: 75vw;
+    height: 65vh;
+
+    left: 50%;
+    transform: translate(-50%);
+
     margin-top: 1rem;
 
     border-radius: 10px;
@@ -228,12 +238,14 @@ body {
 }
 .interactable-pattern {
     position: absolute;
-    top: calc(var(--ground-position) + 1vh);
+    top: calc(var(--ground-position) - 1.15vh);
     left: 90vw;
 
     display: grid;
     grid-template-columns: repeat(32, 26px);
     height: 32px
+
+    z-index: 2;
 }
 .interactable-pattern > * {
     position: static;
@@ -284,6 +296,7 @@ body {
     border-radius: 10px;
 
     background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
+    z-index: 2;
 }
 .end-card-animation {
     animation: show-end-card 500ms linear forwards;

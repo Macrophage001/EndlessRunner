@@ -15,6 +15,8 @@ const playerHeartsDiv  = document.querySelector('.hearts ul');
 const progressBarThumb = document.querySelector('.progress-bar-thumb');
 const progressBarTrail = document.querySelector('.progress-bar-trail');
 
+const interactablesLayer = document.querySelector('.interactables-layer');
+
 const interactablePatternTemplates = [
     `
         <div class="interactable-pattern coin-move-animation">
@@ -266,7 +268,7 @@ const spawnInteractable = () => {
 
     generatedInteractables.push(interactable);
 
-    game.append(interactable);
+    interactablesLayer.append(interactable);
 }
 
 const setPlayerScore = (score) => {
