@@ -293,13 +293,6 @@ const startNextLevel = () => {
 
     document.querySelector('.end-card').remove();
 
-    let activeColliders = document.querySelectorAll('.collider');
-    for (let i = 0; i < activeColliders.length; i++) {
-        if (activeColliders[i].classList.contains('player'))
-            continue;
-        activeColliders[i].remove();
-    }
-
     initLoops();
 
     currentState = GameState.PLAYING;
@@ -328,13 +321,6 @@ const restartGame = () => {
     distanceSystem.Restart(levelMaps[currentLevel]);
 
     document.querySelector('.end-card').remove();
-
-    let activeColliders = document.querySelectorAll('.collider');
-    for (let i = 0; i < activeColliders.length; i++) {
-        if (activeColliders[i].classList.contains('player'))
-            continue;
-        activeColliders[i].remove();
-    }
 
     initLoops();
 
@@ -374,12 +360,37 @@ const onPlayerLost = () => {
 }
 
 const decreasePlayerHearts = () => playerHearts = MathEX.clamp(playerHearts - 1, 0, 3);
-
 const updatePlayerHeartsDisplay = () => {
     let heartsDisplayedCount = playerHeartsDiv.querySelectorAll('li').length;
     if (heartsDisplayedCount !== playerHearts) {
         playerHeartsDiv.innerHTML = playerHeartsGenerator(playerHearts);
     }
+}
+
+let spawningTicks = 0;
+let generatedInteractables = [];
+const spawnInteractable = () => {
+    let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
+    let interactable = Generators.generateHTML(interactablePatternTemplates[randomIndex]);
+
+    generatedInteractables.push(interactable);
+
+    game.append(interactable);
+}
+const updateInteractableSpawning = () => {
+    if (spawningTicks >= 200) {
+        if (currentState === GameState.PLAYING) {
+            let spawnChance = Math.random();
+            if (spawnChance <= obstacleSpawnChance) {
+                spawnInteractable();
+            }
+        }
+
+        spawningTicks = 0;
+    } else {
+        spawningTicks++;
+    }
+    console.log(spawningTicks);
 }
 const update = () => {
     switch (currentState) {
@@ -396,6 +407,7 @@ const update = () => {
                 
             collisionSystem.HandleCollision(interactables);
             updatePlayerHeartsDisplay();
+            updateInteractableSpawning();
 
             checkPlayerWon();
             checkPlayerLost();
@@ -457,24 +469,10 @@ const initLoops = () => {
         update();
     }, 1000 / FPS, mainIntervals);
     Generators.generateLoopCallback(() => {
-        if (currentState === GameState.PLAYING) {
-            let spawnChance = Math.random();
-            if (spawnChance <= obstacleSpawnChance) {
-                let randomIndex = Math.floor(Math.random() * interactablePatternTemplates.length);
-                let interactable = Generators.generateHTML(interactablePatternTemplates[randomIndex]);
-
-                generatedInteractables.push(interactable);
-
-                game.append(interactable);
-            }
-        }
-    }, 2000, mainIntervals);
-    Generators.generateLoopCallback(() => {
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
 }
 
-let generatedInteractables = [];
 const init = () => {
     initInteractables();
     initCollisionHandlers();
@@ -487,4 +485,4 @@ const init = () => {
 
 window.onload = () => {
     init();
-}
+};

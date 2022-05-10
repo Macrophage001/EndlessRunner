@@ -1,0 +1,161 @@
+commit ec35fe4e98c750b19448907c8fa92dba33594641
+Author: Macrophage001 <zerosalvation@gmail.com>
+Date:   Tue May 10 09:26:16 2022 -0400
+
+    - updated README.md
+
+commit cfa3d4a2fb88b21769e5bc484f5ce56c008556ac
+Author: Macrophage001 <zerosalvation@gmail.com>
+Date:   Tue May 10 09:07:39 2022 -0400
+
+    - added README
+
+commit c1e443f1d5a0dde6b631c6444152f205ebe5f1f6
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 10 08:19:45 2022 -0400
+
+    - bug fixing
+
+commit 2332e789592f13590546fae74369b5e0b05524c8
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Mon May 9 12:10:34 2022 -0400
+
+    - updated utils.js and used MathEx.Rect for CollisionSystem
+
+commit 0c504294c17bbc94e9a5b7a8c68b61859517e21f
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Mon May 9 11:32:31 2022 -0400
+
+    - cleaned the codebase a bit, modularized some code.
+
+commit 0e093d368cfbe566e99b4c41b4c3e37c52b6ea7e
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Sat May 7 11:21:40 2022 -0400
+
+    - updated 'generateHTML' function
+
+commit 898576f69d75982e4d2dfac2ff6efd8011b3e1fb
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 14:02:49 2022 -0400
+
+    - adjusted difficulty
+
+commit b2615e7e6f02d2c3efb397ada318883a7f8598b9
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 09:51:39 2022 -0400
+
+    - removed some comments and bug fixes
+
+commit b12b44ccdf6b68bd14b4c71ffecf86a13e5f0ff5
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 09:24:30 2022 -0400
+
+    - bug fixing
+
+commit f119d397b3e5ef3aba697e095ff6baa652a69583
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 09:02:49 2022 -0400
+
+    - bug fixes
+
+commit 24015357c899ffef6ac0d763870c22468679389f
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 08:34:53 2022 -0400
+
+    - Added a controls UI
+
+commit e1ee3257d49d935b319cb415cdb2a65c30141e80
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Fri May 6 08:14:12 2022 -0400
+
+    - cleaned up some files
+
+commit 56a3762b1dc8d73ee0f54ed1965de0f18e554c12
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Thu May 5 22:44:27 2022 -0400
+
+    - final 1.0 commit
+
+commit f1a7107b4c6a0e5888e28424c7d3a1a339932832
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Thu May 5 22:00:36 2022 -0400
+
+    - finished 0.9 'Spawning System'
+
+commit ad52a4ea728aa67b7565976feb23a365829d8489
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Thu May 5 22:00:19 2022 -0400
+
+    - finished 0.8 'Distance System and Progress Bar'
+
+commit e77daf3b7ce566df4c6b1523a5554c1a80c8a323
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Wed May 4 10:07:25 2022 -0400
+
+    - finalized the input system, much more fluid now
+
+commit 5cbb309ed8339b3d59b3a4e18765c1f92fd27898
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Wed May 4 08:02:31 2022 -0400
+
+    - improved input system
+
+commit bbd0dde1472d85881c07a014dc6db8946c1fa836
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 15:26:16 2022 -0400
+
+    - fixed movement code
+
+commit 2bf94cb090524ff2b48b008d28bea361e01be5a8
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 11:54:21 2022 -0400
+
+    - fixed player movement bounds
+
+commit 315133cb9239d0f74b1f00a5faefe1413d988e09
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 11:26:25 2022 -0400
+
+    - completed 0.6.1
+
+commit a048924f6228dc3badb24b51267d4c3e96d4570a
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 09:39:38 2022 -0400
+
+    - added basic input controls
+
+commit 44badb8e7924a2956efceef2206cf1f6f683de94
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 08:06:46 2022 -0400
+
+    - added an FPS const just in case
+
+commit 429acd9d6fb572160769254c1c46d71ae7147283
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 08:03:37 2022 -0400
+
+    - added AnimationEventHandler Class
+
+commit 29db7fa2c4d8629dc435eda02869152378e03474
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Tue May 3 07:46:37 2022 -0400
+
+    - added the CollisionHandler class
+
+commit a033a41c515d90264a9ab99bbda556059fad0b53
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Mon May 2 14:49:48 2022 -0400
+
+    - forgot what i added
+
+commit 0e5e3827db6dcc87a884b01ceebc82aa2f658d97
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Sun May 1 21:06:13 2022 -0400
+
+    - added placeholder character and positioned it
+
+commit 82a7628e472086c2768416ec5a24e2a6734f8bfe
+Author: Macrophage001 <102617650+ronindc@users.noreply.github.com>
+Date:   Sun May 1 20:00:20 2022 -0400
+
+    - Finished 0.1, 0.2 Milestones
