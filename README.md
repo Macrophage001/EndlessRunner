@@ -15,16 +15,22 @@ The main goal is to reach the end of the level while avoiding the obstacles and 
 
 - Hearts: '&hearts;'
 
+
+##### Obstacles
+
+- Spike Trap:
+
+![Spike Trap](./images/sonicSpikes.webp)
+
 #### **Win State**
 
-The player reaches the end of the level.
-![Win State Sonic](<img src="./images/sonicWon.gif" alt="Win State Sonic" width="32px" height="32px" />)
+The player reaches the end of the level:
 
+![Win State Sonic](./images/sonicWon.gif)
 
 #### **Lose State**
 
 The player hits too many obstacles and loses all their lives.
-![Lose State Sonic](./images/sonicSpikes.webp)
 
 #### **Rounds**
 
