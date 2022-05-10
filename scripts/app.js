@@ -459,10 +459,11 @@ const initLoops = () => {
                 spawnInteractable();
             }
         }
-    }, 2000, mainIntervals);
-    Generators.generateLoopCallback(() => {
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
+    // Generators.generateLoopCallback(() => {
+    //     obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
+    // }, 2000, mainIntervals);
 }
 
 const init = () => {
