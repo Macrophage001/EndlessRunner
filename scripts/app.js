@@ -5,17 +5,19 @@ import AnimationEventSystem from "./animationEventSystem.js";
 
 import { MathEX, Generators } from "./utils.js";
 
-const root             = document.querySelector(':root');
+const root = document.querySelector(':root');
 
-const game             = document.querySelector('.game');
-const player           = document.querySelector('.player');
-const playerScoreDiv   = document.querySelector('.score h2');
-const playerHeartsDiv  = document.querySelector('.hearts ul');
+const game = document.querySelector('.game');
+const player = document.querySelector('.player');
+const playerScoreDiv = document.querySelector('.score h2');
+const playerHeartsDiv = document.querySelector('.hearts ul');
 
 const progressBarThumb = document.querySelector('.progress-bar-thumb');
 const progressBarTrail = document.querySelector('.progress-bar-trail');
 
 const interactablesLayer = document.querySelector('.interactables-layer');
+const controls = document.querySelector('.controls');
+const scrollingBG = document.querySelector('.scrolling-background');
 
 const interactablePatternTemplates = [
     `
@@ -119,12 +121,14 @@ const interactablePatternTemplates = [
 
 // GAME STATES:
 class GameState {
-    static WIN     = 'WIN';
-    static LOSE    = 'LOSE';
-    static PLAYING = 'PLAYING';
+    static STARTING = Symbol('STARTING');
+    static INIT     = Symbol('INIT');
+    static WIN      = Symbol('WIN');
+    static LOSE     = Symbol('LOSE');
+    static PLAYING  = Symbol('PLAYING');
 }
 
-let currentState = GameState.PLAYING;
+let currentState = GameState.STARTING;
 
 let mainIntervals = [];
 
@@ -139,19 +143,17 @@ const endMenuGenerator = (state) => {
     let endCardDiv = Generators.generateHTML(`
         <div class="end-card end-card-animation">
             <h2>
-                ${
-                    state === GameState.WIN
-                    ? 'You Win!'
-                    : 'You Lose!'
-                }
+                ${state === GameState.WIN
+            ? 'You Win!'
+            : 'You Lose!'
+        }
             </h2>
             <div class="end-score"><div class="coin-icon"></div><h2>${playerScore}</h2></div>
-            <div class="controls">
-                ${
-                    state === GameState.WIN
-                    ? Generators.generateHTML('<button id="next-level-btn"><h2>Next Level</h2></button>').outerHTML
-                    : Generators.generateHTML('<button id="restart-btn"><h2>Restart</h2></button>').outerHTML
-                }
+            <div class="end-card-controls">
+                ${state === GameState.WIN
+            ? Generators.generateHTML('<button id="next-level-btn"><h2>Next Level</h2></button>').outerHTML
+            : Generators.generateHTML('<button id="restart-btn"><h2>Restart</h2></button>').outerHTML
+        }
             </div>
         </div>
     `);
@@ -169,6 +171,26 @@ const endMenuGenerator = (state) => {
     return endCardDiv;
 }
 
+const menuGenerator = () => {
+    let endCardDiv = Generators.generateHTML(`
+        <div class="end-card end-card-animation">
+            <h2>Endless Runner</h2>
+            <div class="end-card-controls">
+                ${Generators.generateHTML('<button id="start-game-btn"><h2>Start</h2></button>').outerHTML}
+            </div>
+        </div>
+    `);
+
+    let startGameBtn = endCardDiv.querySelector('#start-game-btn');
+    startGameBtn.addEventListener('click', () => {
+        init();
+        currentState = GameState.PLAYING;
+        endCardDiv.remove();
+    });
+
+    return endCardDiv;
+}
+
 const FPS = 60;
 const velocityX = 1.5;
 
@@ -176,8 +198,8 @@ const dstIncrement = 0.02;
 
 const collisionSystem = new CollisionSystem();
 const animEventSystem = new AnimationEventSystem();
-const inputSystem     = new InputSystem();
-const distanceSystem  = new DistanceSystem(dstIncrement, root, progressBarThumb, progressBarTrail);
+const inputSystem = new InputSystem();
+const distanceSystem = new DistanceSystem(dstIncrement, root, progressBarThumb, progressBarTrail);
 
 let minObstacleSpawnChance = 0.50;
 let maxObstacleSpawnChance = 0.80;
@@ -185,20 +207,20 @@ let maxObstacleSpawnChance = 0.80;
 let obstacleSpawnChance = minObstacleSpawnChance;
 
 let currentLevel = 0;
-let playerScore  = 0;
+let playerScore = 0;
 let playerHearts = 3;
 
 const levelMaps = [
-    {maxDst: 50,  minObstacleSpawnChance: 0.5,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 75,  minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 100, minObstacleSpawnChance: 0.6,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 125, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 150, minObstacleSpawnChance: 0.7,  maxObstacleSpawnChance: 0.8 },
-    {maxDst: 175, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 200, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
-    {maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
+    { maxDst: 50, minObstacleSpawnChance: 0.5, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 75, minObstacleSpawnChance: 0.55, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 100, minObstacleSpawnChance: 0.6, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 125, minObstacleSpawnChance: 0.65, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 150, minObstacleSpawnChance: 0.7, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 175, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 200, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 225, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 250, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 },
+    { maxDst: 275, minObstacleSpawnChance: 0.75, maxObstacleSpawnChance: 0.8 }
 ]
 
 class CollisionHandler {
@@ -339,12 +361,11 @@ const restartGame = () => {
 
     currentState = GameState.PLAYING;
 }
-
 const onPlayerWon = () => {
     if (currentState === GameState.WIN) {
         inputSystem.DisableKeys();
         distanceSystem.Pause(root);
-        
+
         player.classList.remove('player-jump-animation');
         player.classList.remove('player-jumping');
         player.classList.remove('player-running');
@@ -420,6 +441,7 @@ const initAnimEvents = () => {
         player.classList.remove('player-jumping');
         player.classList.add('player-running');
     });
+
     animEventSystem.HandleAnimationEvents();
 }
 const initInputs = () => {
@@ -430,14 +452,21 @@ const initInputs = () => {
             player.classList.add('player-jumping');
             player.classList.remove('player-running');
         }
+        if (!controls.classList.contains('fade-out-animation')) {
+            controls.classList.add('fade-out-animation');
+        }
     });
     inputSystem.AddKeyHandler('ArrowRight', () => {
-        let right     = player.getBoundingClientRect().right;
-        let left      = player.getBoundingClientRect().left;
+        let right = player.getBoundingClientRect().right;
+        let left = player.getBoundingClientRect().left;
         let gameRight = game.getBoundingClientRect().right;
 
         if (right < gameRight - 5)
             player.style.left = `${left + velocityX}px`;
+
+        if (!controls.classList.contains('fade-out-animation')) {
+            controls.classList.add('fade-out-animation');
+        }
     });
     inputSystem.AddKeyHandler('ArrowLeft', () => {
         let left = player.getBoundingClientRect().left;
@@ -445,6 +474,9 @@ const initInputs = () => {
 
         if (left > gameLeft + 5) {
             player.style.left = `${left - velocityX}px`;
+        }
+        if (!controls.classList.contains('fade-out-animation')) {
+            controls.classList.add('fade-out-animation');
         }
     });
 }
@@ -464,15 +496,23 @@ const initLoops = () => {
 }
 
 const init = () => {
+    if (controls.classList.contains('fade-out-animation'))
+        controls.classList.remove('fade-out-animation');
+
     initInteractables();
     initCollisionHandlers();
     initAnimEvents();
     initInputs();
     initLoops();
 
+    player.classList.remove('player-won');
+    player.classList.add('player-running');
+
+    scrollingBG.classList.add('scroll-bg-animation');
+
     distanceSystem.Start(levelMaps[currentLevel]);
 }
 
 window.onload = () => {
-    init();
+    game.append(menuGenerator());
 };
