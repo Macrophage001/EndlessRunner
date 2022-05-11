@@ -17,6 +17,7 @@ class InputSystem {
     HandleKeys() {
         document.onkeydown = (e) => {
             e.preventDefault();
+            // console.log(e.key);
             if (this.inputIntervals[e.key] === undefined) {
                 this.inputIntervals[e.key] = setInterval(() => {
                     this.keyHandlers[e.key].keyDown.forEach(cb => cb());

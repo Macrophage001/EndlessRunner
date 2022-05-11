@@ -361,6 +361,7 @@ const restartGame = () => {
 
     currentState = GameState.PLAYING;
 }
+
 const onPlayerWon = () => {
     if (currentState === GameState.WIN) {
         inputSystem.DisableKeys();
