@@ -433,7 +433,6 @@ const initInteractables = () => {
     interactables.push(new SpikeTrapInteractable());
     interactables.push(new HeartInteractable());
 }
-
 const initCollisionHandlers = () => collisionSystem.AddCollisionHandler(new PlayerCollisionHandler(player));
 const initAnimEvents = () => {
     animEventSystem.AddAnimationEventHandler(player, 'player-jump-animation', 'animationend', () => {
@@ -494,7 +493,6 @@ const initLoops = () => {
         obstacleSpawnChance = MathEX.clamp(obstacleSpawnChance + 0.01, minObstacleSpawnChance, maxObstacleSpawnChance);
     }, 2000, mainIntervals);
 }
-
 const init = () => {
     if (controls.classList.contains('fade-out-animation'))
         controls.classList.remove('fade-out-animation');
